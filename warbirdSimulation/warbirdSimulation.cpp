@@ -6,6 +6,10 @@ warbirdSimulation.cpp
 This program is constructed from the manyModelsStatic example the models are indexed
 using arrays.
 
+Keys: 
+'v' moves to the next camera 'x' moves to the previous camera
+'w' warps the ship to duo
+
 Steven Blachowiak, Aaron Scott
 9/29/2016
 */
@@ -14,8 +18,11 @@ Steven Blachowiak, Aaron Scott
 # define __Windows__ 
 # include "../includes465/include465.hpp"
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1;
-int dynamicCam = 0;
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,primus = 3,secundus = 4, ship = 5,missile_1 = 6;
+int currentCam = 1; // start in ship view
+bool nextCam = false;
+bool previousCam = false;
+bool warp = false;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 7;  // number of models in this scene
 char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri" };
@@ -46,6 +53,7 @@ glm::mat4 ModelViewProjectionMatrix; // set in display();
 
 glm::mat4 identity(1.0f);
 
+glm::mat4 cameraUpdate(int cam);
 // window title string
 char titleStr [50]= "Warbird Simulation Phase 1 ";
 
@@ -61,28 +69,78 @@ void reshape(int width, int height) {
 // Animate scene objects by updating their transformation matrices
 void update(int i) {
 	glutTimerFunc(5, update, 1);
+
+	if (warp == true){
+		warp = false;
+		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
+	}
+
 	for (int m = 0; m < nModels; m++) {
 		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 		orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
-		if (m == 3 || m == 4){	// lunar orbits
-			orientation[m] = glm::translate(identity, getPosition(orientation[2])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		if (m == primus || m == secundus){	// lunar orbits
+			orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
 		}
 	}
-	//Update dynamic cameras
-	if (dynamicCam == 1){ // ship
-		viewMatrix = glm::lookAt(getPosition(orientation[5]) - getIn(rotation[5]) * 1000.0f + getUp(rotation[5]) * 300.0f, getPosition(orientation[5] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), glm::vec3(0.0f, 1.0f, 0.0f));
-	} else if (dynamicCam == 2){ //Unum
-		viewMatrix = glm::lookAt(getPosition(orientation[1]) + getIn(rotation[1]) * 8000.0f, getPosition(orientation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-	} else if (dynamicCam == 3){ //Duo
-		viewMatrix = glm::lookAt(getPosition(orientation[2]) + getIn(rotation[2]) * 8000.0f, getPosition(orientation[2]), glm::vec3(0.0f, 1.0f, 0.0f));
-	}
+
+	viewMatrix = cameraUpdate(0); //Update dynamic cameras
 	glutPostRedisplay();
+}
+
+glm::mat4 cameraUpdate(int cam){
+	if (nextCam == true){ // switch camera forward
+		nextCam = false;
+		if (currentCam == 5){
+			currentCam = 1;
+		}
+		else{
+			currentCam++;
+		}
+	}
+	if (previousCam == true){ // switch camera back
+		previousCam = false;
+		if (currentCam == 1){
+			currentCam = 5;
+		}
+		else{ 
+			currentCam--; 
+		}
+	}
+	if (cam <= 0){ // return currentCam mat4 if passed 0
+		cam = currentCam;
+	}
+	if (cam == 1){ // ship
+		return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), glm::vec3(0.0f, 1.0f, 0.0f)));
+	}
+	else if (cam == 2){ //top view
+		return 
+			(glm::lookAt(glm::vec3(0.0f, 20000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+	}
+	else if (cam == 3){ //front view
+		return (glm::lookAt(glm::vec3(0.0f, 10000.0f, 20000.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+	}
+	else if (cam == 4){ //Unum
+		return (glm::lookAt(getPosition(orientation[unum]) + getIn(rotation[unum]) * 8000.0f, getPosition(orientation[unum]), glm::vec3(0.0f, 1.0f, 0.0f)));
+	}
+	else if (cam == 5){ //Duo
+		return (glm::lookAt(getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f, getPosition(orientation[duo]), glm::vec3(0.0f, 1.0f, 0.0f)));
+	}
 }
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 		case 033: case 'q':  case 'Q': exit(EXIT_SUCCESS); break;
-		case '1':  // top view
+		case 'v':  // next cam
+			//printf("v pressed, Current cam = %d \n",currentCam);
+			nextCam = true;
+			break;
+		case 'x':  // next cam
+			previousCam = true;
+			break;
+		case 'w':  // next cam
+			warp = true;
+			break;
+		/*case '1':  // top view
 			dynamicCam = 0;
 			viewMatrix = glm::lookAt(
 				glm::vec3(0.0f, 20000.0f, 0.0f),		// pos
@@ -106,7 +164,7 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case '5':  // Duo view
 			dynamicCam = 3;
-			break;
+			break;*/
 		}
 	}
 
