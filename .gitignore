@@ -31,3 +31,11 @@
 # Project Files
 *.sln
 *.suo
+*.vcxproj
+*.sdf
+*.tlog
+*.lastbuildstate
+*.ilk
+*.log
+*.pdb
+*.idb
