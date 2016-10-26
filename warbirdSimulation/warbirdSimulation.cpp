@@ -70,24 +70,6 @@ void reshape(int width, int height) {
 void update(int i) {
 	glutTimerFunc(5, update, 1);
 
-	if (warp == true){
-		warp = false;
-		float radian;
-		glm::vec3 shipAt = getIn(orientation[ship]);
-		glm::vec3 target = getPosition(orientation[duo]) - getPosition(orientation[ship]);
-		glm::vec3 rotationAxis = glm::cross(target, shipAt);
-		float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
-		float rotationRads = glm::dot(target, shipAt);
-		if (rotationAxisDirection >= 0){
-			radian = rotationRads;
-		}
-		else{
-			radian = (2 * PI) - rotationRads;
-		}
-		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
-		rotation[ship] = glm::rotate(rotation[ship], radian, rotationAxis);
-	}
-
 	for (int m = 0; m < nModels; m++) {
 		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 		if (m == ship){
@@ -99,6 +81,32 @@ void update(int i) {
 		if (m == primus || m == secundus){	// lunar orbits
 			orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
 		}
+	}
+
+	if (warp == true){
+		warp = false;
+		float radian;
+		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
+		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
+		glm::vec3 shipAt = getIn(rotation[ship]);
+		glm::vec3 target; //= getPosition(orientation[duo]) - getPosition(orientation[ship]);
+		target = getOut(rotation[duo]);
+		//target = glm::normalize(target);
+		showVec3("target", target);
+		showVec3("duoOut", getOut(rotation[duo]));
+		glm::vec3 rotationAxis = glm::cross(target, shipAt);
+		rotationAxis = glm::normalize(rotationAxis);
+		showVec3("rotationAxis",rotationAxis);
+		float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
+		float rotationRads = glm::dot(target, shipAt);
+		if (rotationAxisDirection >= 0){
+			radian = rotationRads;
+		}
+		else{
+			radian = (2 * PI) - rotationRads;
+		}
+		rotation[ship] = glm::rotate(rotation[ship], radian, rotationAxis);
+		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
 	}
 
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
