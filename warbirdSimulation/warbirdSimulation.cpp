@@ -72,12 +72,30 @@ void update(int i) {
 
 	if (warp == true){
 		warp = false;
+		float radian;
+		glm::vec3 shipAt = getIn(orientation[ship]);
+		glm::vec3 target = getPosition(orientation[duo]) - getPosition(orientation[ship]);
+		glm::vec3 rotationAxis = glm::cross(target, shipAt);
+		float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
+		float rotationRads = glm::dot(target, shipAt);
+		if (rotationAxisDirection >= 0){
+			radian = rotationRads;
+		}
+		else{
+			radian = (2 * PI) - rotationRads;
+		}
 		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
+		rotation[ship] = glm::rotate(rotation[ship], radian, rotationAxis);
 	}
 
 	for (int m = 0; m < nModels; m++) {
 		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
-		orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		if (m == ship){
+			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+		}
+		else{
+			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		}
 		if (m == primus || m == secundus){	// lunar orbits
 			orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
 		}
@@ -110,7 +128,7 @@ glm::mat4 cameraUpdate(int cam){
 		cam = currentCam;
 	}
 	if (cam == 1){ // ship
-		return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), glm::vec3(0.0f, 1.0f, 0.0f)));
+		return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), getUp(rotation[ship])));
 	}
 	else if (cam == 2){ //top view
 		return 
