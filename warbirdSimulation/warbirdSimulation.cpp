@@ -19,6 +19,7 @@ Steven Blachowiak, Aaron Scott
 # include "../includes465/include465.hpp"
 
 const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,primus = 3,secundus = 4, ship = 5,missile_1 = 6;
+int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 bool nextCam = false;
 bool previousCam = false;
@@ -53,7 +54,11 @@ glm::mat4 ModelViewProjectionMatrix; // set in display();
 
 glm::mat4 identity(1.0f);
 
+//method identifyers
+void warpShip();
+void orientAt(int originObject, int targetObject);
 glm::mat4 cameraUpdate(int cam);
+
 // window title string
 char titleStr [50]= "Warbird Simulation Phase 1 ";
 
@@ -83,29 +88,42 @@ void update(int i) {
 		}
 	}
 
-	if (warp == true){
+	if (warp == true){ //warp ship
 		warp = false;
-		float radian;
-		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
-		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
-		glm::vec3 shipAt = getIn(rotation[ship]);
-		glm::vec3 target = getPosition(orientation[duo]) - getPosition(orientation[ship]);
-		target = glm::normalize(target);
-		glm::vec3 rotationAxis = glm::cross(target, shipAt);
-		rotationAxis = glm::normalize(rotationAxis);
-		float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
-		float rotationRads = glm::dot(target, shipAt);
-		radian = (2 * PI) - glm::acos(rotationRads);
-		rotation[ship] = glm::rotate(rotation[ship], radian, rotationAxis);
-		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
+		warpShip();
 	}
 
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
 	glutPostRedisplay();
 }
 
-void orientAt(){
+void warpShip(){
+	int warpPoint;
+	if (currentWarp == 1){
+		currentWarp = 2;
+		warpPoint = unum;
+	}
+	else{
+		currentWarp = 1;
+		warpPoint = duo;
+	}
+	translate[ship] = getPosition(orientation[warpPoint]) + getIn(rotation[warpPoint]) * 8000.0f; // warps ship to duo camera position. No rotation.
+	orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
+	orientAt(ship, warpPoint);
+}
 
+void orientAt(int originObject, int targetObject){
+	float radian;
+	glm::vec3 originObjectAt = getIn(rotation[originObject]);
+	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
+	target = glm::normalize(target);
+	glm::vec3 rotationAxis = glm::cross(target, originObjectAt);
+	rotationAxis = glm::normalize(rotationAxis);
+	//float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
+	float rotationRads = glm::dot(target, originObjectAt);
+	radian = (2 * PI) - glm::acos(rotationRads);
+	rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
+	orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
 }
 
 glm::mat4 cameraUpdate(int cam){
