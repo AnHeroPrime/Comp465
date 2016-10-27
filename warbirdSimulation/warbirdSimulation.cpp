@@ -89,28 +89,23 @@ void update(int i) {
 		translate[ship] = getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f; // warps ship to duo camera position. No rotation.
 		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
 		glm::vec3 shipAt = getIn(rotation[ship]);
-		glm::vec3 target; //= getPosition(orientation[duo]) - getPosition(orientation[ship]);
-		target = getOut(rotation[duo]);
-		//target = glm::normalize(target);
-		showVec3("target", target);
-		showVec3("duoOut", getOut(rotation[duo]));
+		glm::vec3 target = getPosition(orientation[duo]) - getPosition(orientation[ship]);
+		target = glm::normalize(target);
 		glm::vec3 rotationAxis = glm::cross(target, shipAt);
 		rotationAxis = glm::normalize(rotationAxis);
-		showVec3("rotationAxis",rotationAxis);
 		float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
 		float rotationRads = glm::dot(target, shipAt);
-		if (rotationAxisDirection >= 0){
-			radian = rotationRads;
-		}
-		else{
-			radian = (2 * PI) - rotationRads;
-		}
+		radian = (2 * PI) - glm::acos(rotationRads);
 		rotation[ship] = glm::rotate(rotation[ship], radian, rotationAxis);
 		orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
 	}
 
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
 	glutPostRedisplay();
+}
+
+void orientAt(){
+
 }
 
 glm::mat4 cameraUpdate(int cam){
@@ -157,7 +152,6 @@ void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 		case 033: case 'q':  case 'Q': exit(EXIT_SUCCESS); break;
 		case 'v':  // next cam
-			//printf("v pressed, Current cam = %d \n",currentCam);
 			nextCam = true;
 			break;
 		case 'x':  // next cam
@@ -166,37 +160,13 @@ void keyboard(unsigned char key, int x, int y) {
 		case 'w':  // next cam
 			warp = true;
 			break;
-		/*case '1':  // top view
-			dynamicCam = 0;
-			viewMatrix = glm::lookAt(
-				glm::vec3(0.0f, 20000.0f, 0.0f),		// pos
-				glm::vec3(0.0f, 0.0f, 0.0f),			// look at 
-				glm::vec3(0.0f, 0.0f, -1.0f));			// up
-			//glutPostRedisplay(); 
-			break;
-		case '2':  // front view
-			dynamicCam = 0;
-			viewMatrix = glm::lookAt(
-				glm::vec3(0.0f, 10000.0f, 20000.0f),   // pos
-				glm::vec3(0.0f, 0.0f, 0.0f),			// look at 
-				glm::vec3(0.0f, 1.0f, 0.0f));			// up
-			//glutPostRedisplay(); 
-			break;
-		case '3':  // ship view
-			dynamicCam = 1;
-			break;
-		case '4':  // Unum view
-			dynamicCam = 2; 
-			break;
-		case '5':  // Duo view
-			dynamicCam = 3;
-			break;*/
 		}
 	}
 
 void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // update model matrix
+  glClearColor(0,0,0,0);
 	for (int m = 0; m < nModels; m++) {
 		modelMatrix = orientation[m];
 		ModelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
