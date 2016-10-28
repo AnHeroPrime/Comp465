@@ -181,13 +181,13 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case 't':  // TimeQuantum
 			if (TQ == 5){
-				TQ = 25;
+				TQ = 40;
 			}
-			else if (TQ == 25){
-				TQ = 45;
-			}else if (TQ == 45){
-				TQ = 65;
-			}else if (TQ == 65){
+			else if (TQ == 40){
+				TQ = 100;
+			}else if (TQ == 100){
+				TQ = 500;
+			}else if (TQ == 500){
 				TQ = 5;
 			}
 			break;
