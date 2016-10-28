@@ -21,6 +21,7 @@ Steven Blachowiak, Aaron Scott
 const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,primus = 3,secundus = 4, ship = 5,missile_1 = 6;
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
+int TQ = 5;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
@@ -73,7 +74,7 @@ void reshape(int width, int height) {
 
 // Animate scene objects by updating their transformation matrices
 void update(int i) {
-	glutTimerFunc(5, update, 1);
+	glutTimerFunc(TQ, update, 1);
 
 	for (int m = 0; m < nModels; m++) {
 		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
@@ -177,6 +178,18 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case 'w':  // next cam
 			warp = true;
+			break;
+		case 't':  // TimeQuantum
+			if (TQ == 5){
+				TQ = 25;
+			}
+			else if (TQ == 25){
+				TQ = 45;
+			}else if (TQ == 45){
+				TQ = 65;
+			}else if (TQ == 65){
+				TQ = 5;
+			}
 			break;
 		}
 	}
