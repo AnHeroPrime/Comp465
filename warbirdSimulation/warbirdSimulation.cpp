@@ -120,6 +120,7 @@ void warpShip(){
 		warpPoint = duo;
 	}
 	translate[ship] = getPosition(orientation[warpPoint]) + getIn(rotation[warpPoint]) * 8000.0f; // warps ship to duo camera position. No rotation.
+	rotation[ship] = identity;
 	orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
 	orientAt(ship, warpPoint);
 }
