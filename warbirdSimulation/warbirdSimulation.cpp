@@ -22,6 +22,10 @@ const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,pr
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
+int accelerate = 0; //variables for movement keys
+int yaw = 0;
+int pitch = 0;
+int roll = 0;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
@@ -194,6 +198,52 @@ void keyboard(unsigned char key, int x, int y) {
 		}
 	}
 
+void specialKeys(int key, int x, int y) {
+	int modifier = glutGetModifiers(); //checks for control key
+	if (modifier == GLUT_ACTIVE_CTRL) {
+		if (key == GLUT_KEY_UP) {
+			pitch = 1;
+		}
+		else if (key == GLUT_KEY_DOWN) {
+			pitch = -1;
+		}
+		else {
+			pitch = 0;
+		}
+
+		if (key == GLUT_KEY_RIGHT) {
+			roll = 1;
+		}
+		else if (key == GLUT_KEY_LEFT) {
+			roll = -1;
+		}
+		else {
+			roll = 0;
+		}
+	}
+	else {
+		if (key == GLUT_KEY_UP) {
+			accelerate = 1;
+		}
+		else if (key == GLUT_KEY_DOWN) {
+			accelerate = -1;
+		}
+		else {
+			accelerate = 0;
+		}
+
+		if (key == GLUT_KEY_RIGHT) {
+			yaw = -1;
+		}
+		else if (key == GLUT_KEY_LEFT) {
+			yaw = 1;
+		}
+		else {
+			yaw = 0;
+		}
+	}
+}
+
 void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // update model matrix
@@ -271,6 +321,7 @@ int main(int argc, char* argv[]) {
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
   glutKeyboardFunc(keyboard);
+  glutSpecialFunc(specialKeys);
   glutTimerFunc(5, update, 1);
   glutMainLoop();
   printf("done\n");

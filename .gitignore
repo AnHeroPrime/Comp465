@@ -43,3 +43,4 @@
 *.tlog
 *.vcxproj
 *.db
+*.opendb
