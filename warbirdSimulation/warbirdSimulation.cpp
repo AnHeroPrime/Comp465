@@ -23,7 +23,7 @@ int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
 int speed = 10;
-int gravity = 1;
+int gravity = 0;
 int fire = 0;
 int accelerate = 0; //variables for movement keys
 int yaw = 0;
@@ -86,6 +86,9 @@ void update(int i) {
 	for (int m = 0; m < nModels; m++) {
 		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 		if (m == ship){
+			rotation[m] = glm::rotate(rotation[m], float(pitch * 0.02), glm::vec3(1, 0, 0));
+			rotation[m] = glm::rotate(rotation[m], float(yaw * 0.02), glm::vec3(0, 1, 0));
+			rotation[m] = glm::rotate(rotation[m], float(roll * 0.02), glm::vec3(0, 0, 1));
 			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 		}
 		else{
@@ -95,6 +98,7 @@ void update(int i) {
 			orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
 		}
 	}
+	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
 
 	if (warp == true){ //warp ship
 		warp = false;
@@ -237,18 +241,11 @@ void specialKeys(int key, int x, int y) {
 		else if (key == GLUT_KEY_DOWN) {
 			pitch = -1;
 		}
-		else {
-			pitch = 0;
-		}
-
 		if (key == GLUT_KEY_RIGHT) {
 			roll = 1;
 		}
 		else if (key == GLUT_KEY_LEFT) {
 			roll = -1;
-		}
-		else {
-			roll = 0;
 		}
 	}
 	else {
@@ -258,21 +255,15 @@ void specialKeys(int key, int x, int y) {
 		else if (key == GLUT_KEY_DOWN) {
 			accelerate = -1;
 		}
-		else {
-			accelerate = 0;
-		}
-
 		if (key == GLUT_KEY_RIGHT) {
 			yaw = -1;
 		}
 		else if (key == GLUT_KEY_LEFT) {
 			yaw = 1;
 		}
-		else {
-			yaw = 0;
-		}
 	}
 }
+
 
 void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
