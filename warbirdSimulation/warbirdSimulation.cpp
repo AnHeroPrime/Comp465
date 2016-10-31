@@ -22,6 +22,9 @@ const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,pr
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
+int speed = 10;
+int gravity = 1;
+int fire = 0;
 int accelerate = 0; //variables for movement keys
 int yaw = 0;
 int pitch = 0;
@@ -177,26 +180,53 @@ void keyboard(unsigned char key, int x, int y) {
 		case 'v':  // next cam
 			nextCam = true;
 			break;
-		case 'x':  // next cam
+		case 'x':  // last cam
 			previousCam = true;
 			break;
-		case 'w':  // next cam
+		case 'w':  // warp
 			warp = true;
 			break;
 		case 't':  // TimeQuantum
-			if (TQ == 5){
+			if (TQ == 5){ //trainee
 				TQ = 40;
 			}
-			else if (TQ == 40){
+			else if (TQ == 40){ //pilot
 				TQ = 100;
-			}else if (TQ == 100){
+			}
+			else if (TQ == 100){ //ace
 				TQ = 500;
-			}else if (TQ == 500){
+			}
+			else if (TQ == 500){ //debug
 				TQ = 5;
 			}
 			break;
-		}
+		case 's': //speed
+			if (speed == 10) {
+				speed = 50;
+			}
+			if (speed == 50) {
+				speed = 200;
+			}
+			else { //speed = 200
+				speed = 10;
+			}
+			break;
+		case 'g': //gravity
+			if (gravity = 1) {
+				gravity = 0;
+			}
+			else { //gravity = 0
+				gravity = 1;
+			}
+			break;
 	}
+	if (key == 'f') { //fire
+		fire = 1;
+	}
+	else {
+		fire = 0;
+	}
+}
 
 void specialKeys(int key, int x, int y) {
 	int modifier = glutGetModifiers(); //checks for control key
