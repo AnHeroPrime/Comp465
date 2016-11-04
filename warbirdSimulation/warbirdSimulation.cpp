@@ -18,7 +18,7 @@ Steven Blachowiak, Aaron Scott
 # define __Windows__ 
 # include "../includes465/include465.hpp"
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1,ruber = 0,unum = 1,duo = 2,primus = 3,secundus = 4, ship = 5,missile_1 = 6;
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7;
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
@@ -33,11 +33,11 @@ bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
 // constants for models:  file names, vertex count, model display size
-const int nModels = 7;  // number of models in this scene
-char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri" };
+const int nModels = 8;  // number of models in this scene
+char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri" };
 float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
-const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3 };
+const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3 };
 char * vertexShaderFile   = "simpleVertex.glsl";     
 char * fragmentShaderFile = "simpleFragment.glsl";    
 GLuint shaderProgram; 
@@ -48,10 +48,10 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 65.0f };   // size of model
-float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f };
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 65.0f, 65.0f };   // size of model
+float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f };
 glm::vec3 scale[nModels];       // set in init()
-glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850) };
+glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850) };
 glm::mat4 rotation[nModels];
 glm::mat4 orientation[nModels];
 
@@ -84,20 +84,27 @@ void update(int i) {
 	glutTimerFunc(TQ, update, 1);
 
 	for (int m = 0; m < nModels; m++) {
-		rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 		if (m == ship){
 			rotation[m] = glm::rotate(rotation[m], float(pitch * 0.02), glm::vec3(1, 0, 0));
 			rotation[m] = glm::rotate(rotation[m], float(yaw * 0.02), glm::vec3(0, 1, 0));
 			rotation[m] = glm::rotate(rotation[m], float(roll * 0.02), glm::vec3(0, 0, 1));
 			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 		}
-		else{
-			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		else if (m == missile_1 || m == missile_2){
+			orientAt(missile_1, duo);
+			orientAt(missile_2, unum);
+			translate[m] = translate[m] + getIn(rotation[m]) * 25.0f;
+			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 		}
-		if (m == primus || m == secundus){	// lunar orbits
-			orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		else{ // orbits
+			rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
+			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+			if (m == primus || m == secundus){	// lunar orbits
+				orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+			}
 		}
 	}
+
 	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
 
 	if (warp == true){ //warp ship
@@ -136,7 +143,7 @@ void orientAt(int originObject, int targetObject){
 	float rotationRads = glm::dot(target, originObjectAt);
 	radian = (2 * PI) - glm::acos(rotationRads);
 	rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
-	orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
+	//orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
 }
 
 glm::mat4 cameraUpdate(int cam){
