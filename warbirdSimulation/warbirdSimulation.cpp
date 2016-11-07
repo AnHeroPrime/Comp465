@@ -18,7 +18,7 @@ Steven Blachowiak, Aaron Scott
 # define __Windows__ 
 # include "../includes465/include465.hpp"
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7;
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, gravityMax = 90000000;
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
@@ -32,11 +32,13 @@ int roll = 0;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
+boolean initialUpdate = true;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 8;  // number of models in this scene
 char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri" };
 float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
+float gravityForce;
 const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3 };
 char * vertexShaderFile   = "simpleVertex.glsl";     
 char * fragmentShaderFile = "simpleFragment.glsl";    
@@ -88,7 +90,22 @@ void update(int i) {
 			rotation[m] = glm::rotate(rotation[m], float(pitch * 0.02), glm::vec3(1, 0, 0));
 			rotation[m] = glm::rotate(rotation[m], float(yaw * 0.02), glm::vec3(0, 1, 0));
 			rotation[m] = glm::rotate(rotation[m], float(roll * 0.02), glm::vec3(0, 0, 1));
+
+			if (!initialUpdate) {
+				translate[m] = getPosition(orientation[m]) + getIn(rotation[m]) * float(accelerate * speed);
+			}
+			else { //makes sure ship has initial position set
+				initialUpdate = false;
+			}
 			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+
+			if (gravity == 1) {
+				gravityForce = gravityMax / pow(glm::distance(translate[ship], translate[ruber]),2);
+				glm::vec3 gravityVector = getPosition(orientation[ruber]) - getPosition(orientation[ship]);
+				gravityVector = glm::normalize(gravityVector);
+				translate[m] = getPosition(orientation[m]) + gravityVector * gravityForce;
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+			}
 		}
 		else if (m == missile_1 || m == missile_2){
 			orientAt(missile_1, duo);
@@ -224,7 +241,7 @@ void keyboard(unsigned char key, int x, int y) {
 			}
 			break;
 		case 'g': //gravity
-			if (gravity = 1) {
+			if (gravity == 1) {
 				gravity = 0;
 			}
 			else { //gravity = 0
