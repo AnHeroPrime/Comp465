@@ -67,7 +67,7 @@ glm::mat4 identity(1.0f);
 //method identifyers
 void warpShip();
 void missileTracking(int missile);
-void orientAt(int originObject, int targetObject);
+bool orientAt(int originObject, int targetObject);
 glm::mat4 cameraUpdate(int cam);
 
 // window title string
@@ -86,15 +86,12 @@ void reshape(int width, int height) {
 void update(int i) {
 	glutTimerFunc(TQ, update, 1);
 
-	if (warp == true){ //warp ship
+	if (warp == true){ // warp ship
 		warp = false;
 		warpShip();
 	}
 
-	if (fire == true){
-		missileTracking(missile_1);
-		//missileTracking(missile_2, missileBase_1);
-	}
+//
 
 	for (int m = 0; m < nModels; m++) {
 		if (m == ship){
@@ -126,20 +123,22 @@ void update(int i) {
 			}
 		}
 
-		// missiles
+		// missile updates
 		if (m == missile_1){
 			if (fire == false){
+				//printf("fire = FALSE");
 				translate[m] = getPosition(orientation[ship]);
 				rotation[m] = rotation[ship];
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
 			}
 			else{
-				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+				//printf("fire = TRUE");
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m])); 
+				missileTracking(missile_1); // if 'f' is pressed fire missile
 			}
 		}
 		else if (m == missile_2){
-			//missileTracking(m, unum);
-			//orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
 		}
 	}
 
@@ -150,8 +149,8 @@ void update(int i) {
 }
 
 void missileTracking(int missile){
-	int target;
-	if (missile == missile_1){ // missile is fired from the ship
+	int target = missileBase_2;
+	/*if (missile == missile_1){ // missile is fired from the ship, pick closest base
 		if (distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_1])) < distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_2]))){
 			target = missileBase_1;
 		}
@@ -159,17 +158,19 @@ void missileTracking(int missile){
 			target = missileBase_2;
 		}
 	}
-	else { // missle is fired from the stations
+	else { // missle is fired from the stations, Ship is target
 		target = ship;
-	}
-
+	}*/
+	
 	orientAt(missile, target);
-	translate[missile] = translate[missile] + getIn(rotation[missile]) * 25.0f;
-	orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
+	translate[missile] = translate[missile] + getIn(rotation[missile]) * 25.0f; // move missile forward
+	
+	
+	//orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
 
-	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) < 50){
+	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) < 100){ // simple collision testing
 		fire = false;
-		printf("fire = flase");
+		printf("HIT");
 	}
 }
 
@@ -189,18 +190,30 @@ void warpShip(){
 	orientAt(ship, warpPoint);
 }
 
-void orientAt(int originObject, int targetObject){
+bool orientAt(int originObject, int targetObject){
 	float radian;
 	glm::vec3 originObjectAt = getIn(rotation[originObject]);
 	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
 	target = glm::normalize(target);
 	glm::vec3 rotationAxis = glm::cross(target, originObjectAt);
 	rotationAxis = glm::normalize(rotationAxis);
-	//float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
+	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
 	float rotationRads = glm::dot(target, originObjectAt);
-	radian = (2 * PI) - glm::acos(rotationRads);
+	//if (rotationAxisDirection >= 0){
+	//	radian = acos(rotationRads);
+	//}
+	//else{
+		radian = (2 * PI) - glm::acos(rotationRads);
+	//}
 	rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
-	orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
+	//orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
+	if (colinear(originObjectAt, target, .01)){
+		printf("COLINEAR");
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
 glm::mat4 cameraUpdate(int cam){
@@ -288,12 +301,12 @@ void keyboard(unsigned char key, int x, int y) {
 				gravity = 1;
 			}
 			break;
-	}
-	if (key == 'f') { //fire
-		fire = 1;
-	}
-	else {
-		fire = 0;
+		case 'f': //fire
+			fire = true;
+			break;
+		case '1': //reset missle **Debug**
+			fire = false;
+			break;
 	}
 }
 
