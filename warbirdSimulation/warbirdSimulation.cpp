@@ -66,6 +66,7 @@ glm::mat4 identity(1.0f);
 
 //method identifyers
 void warpShip();
+void missileTracking(int missile);
 void orientAt(int originObject, int targetObject);
 glm::mat4 cameraUpdate(int cam);
 
@@ -84,6 +85,16 @@ void reshape(int width, int height) {
 // Animate scene objects by updating their transformation matrices
 void update(int i) {
 	glutTimerFunc(TQ, update, 1);
+
+	if (warp == true){ //warp ship
+		warp = false;
+		warpShip();
+	}
+
+	if (fire == true){
+		missileTracking(missile_1);
+		//missileTracking(missile_2, missileBase_1);
+	}
 
 	for (int m = 0; m < nModels; m++) {
 		if (m == ship){
@@ -107,12 +118,6 @@ void update(int i) {
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 			}
 		}
-		else if (m == missile_1 || m == missile_2){
-			orientAt(missile_1, duo);
-			orientAt(missile_2, unum);
-			translate[m] = translate[m] + getIn(rotation[m]) * 25.0f;
-			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
-		}
 		else{ // orbits
 			rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
@@ -120,17 +125,50 @@ void update(int i) {
 				orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
 			}
 		}
+
+		// missiles
+		if (m == missile_1){
+			if (fire == false){
+				translate[m] = getPosition(orientation[ship]);
+				//rotation[m] = rotation[ship];
+			}
+			else{
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+			}
+		}
+		else if (m == missile_2){
+			//missileTracking(m, unum);
+			//orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+		}
 	}
 
 	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
 
-	if (warp == true){ //warp ship
-		warp = false;
-		warpShip();
-	}
-
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
 	glutPostRedisplay();
+}
+
+void missileTracking(int missile){
+	int target;
+	if (missile == missile_1){ // missile is fired from the ship
+		if (distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_1])) < distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_2]))){
+			target = missileBase_1;
+		}
+		else{ 
+			target = missileBase_2;
+		}
+	}
+	else { // missle is fired from the stations
+		target = ship;
+	}
+
+	orientAt(missile, target);
+	translate[missile] = translate[missile] + getIn(rotation[missile]) * 25.0f;
+	orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
+
+	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) < 50){
+		fire = false;
+	}
 }
 
 void warpShip(){
@@ -143,7 +181,7 @@ void warpShip(){
 		currentWarp = 1;
 		warpPoint = duo;
 	}
-	translate[ship] = getPosition(orientation[warpPoint]) + getIn(rotation[warpPoint]) * 8000.0f; // warps ship to duo camera position. No rotation.
+	translate[ship] = getPosition(orientation[warpPoint]) + getIn(rotation[warpPoint]) * 8000.0f; // warps ship to position. No rotation.
 	rotation[ship] = identity;
 	orientation[ship] = glm::translate(identity, translate[ship]) * rotation[ship] * glm::scale(identity, glm::vec3(scale[ship]));
 	orientAt(ship, warpPoint);
