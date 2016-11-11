@@ -130,7 +130,8 @@ void update(int i) {
 		if (m == missile_1){
 			if (fire == false){
 				translate[m] = getPosition(orientation[ship]);
-				//rotation[m] = rotation[ship];
+				rotation[m] = rotation[ship];
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
 			}
 			else{
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
@@ -168,6 +169,7 @@ void missileTracking(int missile){
 
 	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) < 50){
 		fire = false;
+		printf("fire = flase");
 	}
 }
 
@@ -198,7 +200,7 @@ void orientAt(int originObject, int targetObject){
 	float rotationRads = glm::dot(target, originObjectAt);
 	radian = (2 * PI) - glm::acos(rotationRads);
 	rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
-	//orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
+	orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
 }
 
 glm::mat4 cameraUpdate(int cam){
