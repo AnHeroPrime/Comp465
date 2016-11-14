@@ -32,7 +32,10 @@ int roll = 0;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
-boolean initialUpdate = true;
+bool playerCollision = false;
+bool missileBase1Collision = false;
+bool missileBase2Collision = false;
+bool initialUpdate = true;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 10;  // number of models in this scene
 char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri" };
@@ -50,7 +53,7 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 65.0f, 65.0f, 30.0f, 30.0f };   // size of model
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 25.0f, 25.0f, 30.0f, 30.0f };   // size of model
 float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f };
 glm::vec3 scale[nModels];       // set in init()
 glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0) };
@@ -90,9 +93,6 @@ void update(int i) {
 		warp = false;
 		warpShip();
 	}
-
-//
-
 	for (int m = 0; m < nModels; m++) {
 		if (m == ship){
 			rotation[m] = glm::rotate(rotation[m], float(pitch * 0.02), glm::vec3(1, 0, 0));
@@ -142,6 +142,45 @@ void update(int i) {
 		}
 	}
 
+	if (abs(glm::distance(translate[ship], translate[ruber])) < (modelSize[ruber] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[unum])) < (modelSize[unum] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[duo])) < (modelSize[duo] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[primus])) < (modelSize[primus] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[secundus])) < (modelSize[secundus] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[primus])) < (modelSize[primus] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	else if (abs(glm::distance(translate[ship], translate[missile_2])) < (modelSize[missile_2] + modelSize[ship])) {
+		playerCollision = true;
+		printf("YOU DIED ");
+	}
+	if (abs(glm::distance(translate[missileBase_1], translate[missile_1])) < (modelSize[missileBase_1] + modelSize[missile_1])) {
+		missileBase1Collision = true;
+		fire = false;
+		printf("HIT ");
+	}
+	if (abs(glm::distance(translate[missileBase_2], translate[missile_1])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
+		missileBase1Collision = true;
+		fire = false;
+		printf("HIT ");
+	}
+
 	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
 
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
@@ -168,10 +207,6 @@ void missileTracking(int missile){
 	
 	//orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
 
-	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) < 100){ // simple collision testing
-		fire = false;
-		printf("HIT");
-	}
 }
 
 void warpShip(){
@@ -371,7 +406,8 @@ void init() {
     modelBR[i] = loadModelBuffer(modelFile[i], nVertices[i], VAO[i], buffer[i], shaderProgram,
       vPosition[i], vColor[i], vNormal[i], "vPosition", "vColor", "vNormal"); 
     // set scale for models given bounding radius  
-    scale[i] = glm::vec3( modelSize[i] * 1.0f/modelBR[i]);
+    scale[i] = glm::vec3(modelSize[i] * 1.0f / modelBR[i]);
+	
     }
   
   MVP = glGetUniformLocation(shaderProgram, "ModelViewProjection");
