@@ -32,6 +32,7 @@ int roll = 0;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
+bool canFire = true;
 bool playerCollision = false;
 bool missileBase1Collision = false;
 bool missileBase2Collision = false;
@@ -53,7 +54,7 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 25.0f, 25.0f, 30.0f, 30.0f };   // size of model
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 50.0f, 25.0f, 30.0f, 30.0f };   // size of model
 float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f };
 glm::vec3 scale[nModels];       // set in init()
 glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0) };
@@ -65,11 +66,17 @@ glm::mat4 viewMatrix;           // set in init()
 glm::mat4 projectionMatrix;     // set in reshape()
 glm::mat4 ModelViewProjectionMatrix; // set in display();
 
-// window title string
-char titleStr[100];
-char baseStr[50] = "Warbird Simulation ";
+// window title strings
 char fpsStr[15];
+char missileStr[50];
+char viewStr[50] = "Camera: Ship View | ";
+char baseStr[50] = "Warbird Simulation | ";
+char titleStr[500];
+int playerMissileCount = 9; // Player Missile Count
+int base1MissileCount = 5;
+int base2MissileCount = 5;
 int frameCount = 0;
+int missileTimerCount = 0;
 double currentTime, lastTime, timeInterval;
 glm::mat4 identity(1.0f);
 
@@ -91,7 +98,9 @@ void reshape(int width, int height) {
 // update and display animation state in window title
 void updateTitle() {
 	strcpy(titleStr, baseStr);
+	strcat(titleStr, viewStr);
 	strcat(titleStr, fpsStr);
+	strcat(titleStr, missileStr);
 	glutSetWindowTitle(titleStr);
 }
 
@@ -141,10 +150,21 @@ void update(int i) {
 				rotation[m] = rotation[ship];
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
 			}
-			else{
-				//printf("fire = TRUE");
-				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m])); 
-				missileTracking(missile_1); // if 'f' is pressed fire missile
+			if (fire == true) {
+				if (missileTimerCount == 0){
+					playerMissileCount--;
+				}
+				missileTimerCount++;
+				if (missileTimerCount > 200){ // start missile tracking after 200 frames
+					missileTracking(missile_1);
+				}
+				translate[m] = translate[m] + getIn(rotation[m]) * 25.0f; // move missile forward
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
+
+				if (missileTimerCount >= 2000){ // kill missle after 2000 frames
+					missileTimerCount = 0;
+					fire = false;
+				}
 			}
 		}
 		else if (m == missile_2){
@@ -194,6 +214,7 @@ void update(int i) {
 	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
 
 	viewMatrix = cameraUpdate(0); //Update dynamic cameras
+	sprintf(missileStr, "Missiles: %d | ", playerMissileCount);
 	glutPostRedisplay();
 }
 
@@ -212,8 +233,6 @@ void missileTracking(int missile){
 	}
 	
 	orientAt(missile, target);
-	translate[missile] = translate[missile] + getIn(rotation[missile]) * 25.0f; // move missile forward
-	
 	//orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
 }
 
@@ -237,7 +256,7 @@ bool orientAt(int originObject, int targetObject){
 	float radian;
 	glm::vec3 originObjectAt = getIn(rotation[originObject]);
 	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
-	glm::vec3 normTarget = glm::normalize(target);
+	glm::vec3 normTarget = glm::normalize(target); // normalized target vector
 	glm::vec3 rotationAxis = glm::cross(normTarget, originObjectAt);
 	rotationAxis = glm::normalize(rotationAxis);
 	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
@@ -246,10 +265,10 @@ bool orientAt(int originObject, int targetObject){
 	//orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
 	if (colinear(originObjectAt, normTarget, .1)){
 		//printf("COLINEAR " "%d", distance(originObjectAt + target, target)); 
-		if (length(originObjectAt + target) > length(target)){
+		//if (length(originObjectAt + target) > length(target)){
 			//rotation[originObject] = glm::rotate(rotation[originObject], PI, getUp(rotation[originObject]));
-			printf("BAD_COLINEAR");
-		}
+			printf("COLINEAR");
+		//}
 		return true;
 	}
 	else{
@@ -281,19 +300,23 @@ glm::mat4 cameraUpdate(int cam){
 		cam = currentCam;
 	}
 	if (cam == 1){ // ship
+		sprintf(viewStr,"Camera: Ship View | ");
 		return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), getUp(rotation[ship])));
 	}
 	else if (cam == 2){ //top view
-		return 
-			(glm::lookAt(glm::vec3(0.0f, 20000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+		sprintf(viewStr, "Camera: Top View | ");
+		return (glm::lookAt(glm::vec3(0.0f, 20000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
 	}
 	else if (cam == 3){ //front view
+		sprintf(viewStr, "Camera: Front View | ");
 		return (glm::lookAt(glm::vec3(0.0f, 10000.0f, 20000.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
 	}
 	else if (cam == 4){ //Unum
+		sprintf(viewStr, "Camera: Unum View | ");
 		return (glm::lookAt(getPosition(orientation[unum]) + getIn(rotation[unum]) * 8000.0f, getPosition(orientation[unum]), glm::vec3(0.0f, 1.0f, 0.0f)));
 	}
 	else if (cam == 5){ //Duo
+		sprintf(viewStr, "Camera: Duo View | ");
 		return (glm::lookAt(getPosition(orientation[duo]) + getIn(rotation[duo]) * 8000.0f, getPosition(orientation[duo]), glm::vec3(0.0f, 1.0f, 0.0f)));
 	}
 }
@@ -344,7 +367,10 @@ void keyboard(unsigned char key, int x, int y) {
 			}
 			break;
 		case 'f': //fire
-			fire = true;
+			if (fire == false){
+				fire = true;
+				//missileTimerCount = frameCount;
+			}
 			break;
 		case '1': //reset missle **Debug**
 			fire = false;
@@ -402,7 +428,7 @@ void display() {
   currentTime = glutGet(GLUT_ELAPSED_TIME);  // get elapsed system time
   timeInterval = currentTime - lastTime;
   if (timeInterval >= 1000) {
-	  sprintf(fpsStr, " FPS: %4d", (int)(frameCount / (timeInterval / 1000.0f)));
+	  sprintf(fpsStr, "FPS: %4d | ", (int)(frameCount / (timeInterval / 1000.0f)));
 	  lastTime = currentTime;
 	  frameCount = 0;
 	  updateTitle();
