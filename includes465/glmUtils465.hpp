@@ -78,6 +78,11 @@ float distance(glm::vec3 p1, glm::vec3 p2) {
 	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2)  + pow(p1.z - p2.z, 2));
 	}
 
+// vector legnth
+float length(glm::vec3 p1) {
+	return sqrt(pow(p1.x, 2) + pow(p1.y, 2) + pow(p1.z, 2));
+}
+
 // v1 and v2 are colinear within an epsilon (rounding) range
 // epislon of 0.0 has no range, suggest 0.1 for orient towards
 bool colinear(glm::vec3 v1, glm::vec3 v2, double epsilon) {

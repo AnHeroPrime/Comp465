@@ -65,6 +65,12 @@ glm::mat4 viewMatrix;           // set in init()
 glm::mat4 projectionMatrix;     // set in reshape()
 glm::mat4 ModelViewProjectionMatrix; // set in display();
 
+// window title string
+char titleStr[100];
+char baseStr[50] = "Warbird Simulation ";
+char fpsStr[15];
+int frameCount = 0;
+double currentTime, lastTime, timeInterval;
 glm::mat4 identity(1.0f);
 
 //method identifyers
@@ -72,9 +78,6 @@ void warpShip();
 void missileTracking(int missile);
 bool orientAt(int originObject, int targetObject);
 glm::mat4 cameraUpdate(int cam);
-
-// window title string
-char titleStr [50]= "Warbird Simulation Phase 1 ";
 
 void reshape(int width, int height) {
   float aspectRatio = (float) width / (float) height;
@@ -84,6 +87,13 @@ void reshape(int width, int height) {
     FOVY, width, height, aspectRatio);
   projectionMatrix = glm::perspective(FOVY, aspectRatio, 1.0f, 100000.0f); 
   }
+
+// update and display animation state in window title
+void updateTitle() {
+	strcpy(titleStr, baseStr);
+	strcat(titleStr, fpsStr);
+	glutSetWindowTitle(titleStr);
+}
 
 // Animate scene objects by updating their transformation matrices
 void update(int i) {
@@ -189,7 +199,7 @@ void update(int i) {
 
 void missileTracking(int missile){
 	int target = missileBase_2;
-	/*if (missile == missile_1){ // missile is fired from the ship, pick closest base
+	if (missile == missile_1){ // missile is fired from the ship, pick closest base
 		if (distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_1])) < distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_2]))){
 			target = missileBase_1;
 		}
@@ -199,14 +209,12 @@ void missileTracking(int missile){
 	}
 	else { // missle is fired from the stations, Ship is target
 		target = ship;
-	}*/
+	}
 	
 	orientAt(missile, target);
 	translate[missile] = translate[missile] + getIn(rotation[missile]) * 25.0f; // move missile forward
 	
-	
 	//orientation[missile] = glm::translate(identity, translate[missile]) * rotation[missile] * glm::scale(identity, glm::vec3(scale[missile]));
-
 }
 
 void warpShip(){
@@ -229,24 +237,23 @@ bool orientAt(int originObject, int targetObject){
 	float radian;
 	glm::vec3 originObjectAt = getIn(rotation[originObject]);
 	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
-	target = glm::normalize(target);
-	glm::vec3 rotationAxis = glm::cross(target, originObjectAt);
+	glm::vec3 normTarget = glm::normalize(target);
+	glm::vec3 rotationAxis = glm::cross(normTarget, originObjectAt);
 	rotationAxis = glm::normalize(rotationAxis);
 	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
-	float rotationRads = glm::dot(target, originObjectAt);
-	//if (rotationAxisDirection >= 0){
-	//	radian = acos(rotationRads);
-	//}
-	//else{
-		radian = (2 * PI) - glm::acos(rotationRads);
-	//}
-	rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
+	float rotationRads = glm::dot(normTarget, originObjectAt);
+	radian = (2 * PI) - glm::acos(rotationRads);
 	//orientation[originObject] = glm::translate(identity, translate[originObject]) * rotation[originObject] * glm::scale(identity, glm::vec3(scale[originObject]));
-	if (colinear(originObjectAt, target, .01)){
-		printf("COLINEAR");
+	if (colinear(originObjectAt, normTarget, .1)){
+		//printf("COLINEAR " "%d", distance(originObjectAt + target, target)); 
+		if (length(originObjectAt + target) > length(target)){
+			//rotation[originObject] = glm::rotate(rotation[originObject], PI, getUp(rotation[originObject]));
+			printf("BAD_COLINEAR");
+		}
 		return true;
 	}
 	else{
+		rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
 		return false;
 	}
 }
@@ -390,6 +397,16 @@ void display() {
 		glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
 	}
   glutSwapBuffers();
+  frameCount++;
+  // see if a second has passed to set estimated fps information
+  currentTime = glutGet(GLUT_ELAPSED_TIME);  // get elapsed system time
+  timeInterval = currentTime - lastTime;
+  if (timeInterval >= 1000) {
+	  sprintf(fpsStr, " FPS: %4d", (int)(frameCount / (timeInterval / 1000.0f)));
+	  lastTime = currentTime;
+	  frameCount = 0;
+	  updateTitle();
+  }
   }
 
 // load the shader programs, vertex data from model files, create the solids, set initial view
@@ -438,7 +455,7 @@ int main(int argc, char* argv[]) {
 	glutInitContextVersion(3, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 # endif
-  glutCreateWindow("Warbird Simulation Phase 1");
+  glutCreateWindow(baseStr);
   // initialize and verify glew
   glewExperimental = GL_TRUE;  // needed my home system 
   GLenum err = glewInit();  
