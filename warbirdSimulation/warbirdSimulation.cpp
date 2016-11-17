@@ -265,7 +265,8 @@ bool orientAt(int originObject, int targetObject){
 	glm::vec3 originObjectAt = getIn(rotation[originObject]);
 	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
 	glm::vec3 normTarget = glm::normalize(target); // normalized target vector
-	glm::vec3 rotationAxis = glm::cross(normTarget, originObjectAt);
+	glm::vec3 rotationAxis = glm::vec3(0, 0, 0);//
+	rotationAxis = glm::cross(normTarget, originObjectAt);
 	rotationAxis = glm::normalize(rotationAxis);
 	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
 	float rotationRads = glm::dot(normTarget, originObjectAt);
@@ -278,7 +279,12 @@ bool orientAt(int originObject, int targetObject){
 		return true;
 	}
 	else{
-		rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
+		//if (colinear(originObjectAt, normTarget, .4)){
+			//no rotation axis
+		//}
+		//else{
+			rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
+		//}
 		return false;
 	}
 }
