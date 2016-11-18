@@ -174,40 +174,36 @@ void update(int i) {
 		}
 	}
 
-	if (abs(glm::distance(translate[ship], translate[ruber])) < (modelSize[ruber] + modelSize[ship])) {
+	if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[ruber])) < (modelSize[ruber] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[unum])) < (modelSize[unum] + modelSize[ship])) {
+	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[unum])) < (modelSize[unum] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[duo])) < (modelSize[duo] + modelSize[ship])) {
+	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[duo])) < (modelSize[duo] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[primus])) < (modelSize[primus] + modelSize[ship])) {
+	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[primus])) < (modelSize[primus] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[secundus])) < (modelSize[secundus] + modelSize[ship])) {
+	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[secundus])) < (modelSize[secundus] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[primus])) < (modelSize[primus] + modelSize[ship])) {
+	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[missile_2])) < (modelSize[missile_2] + modelSize[ship])) {
 		playerCollision = true;
 		printf("YOU DIED ");
 	}
-	else if (abs(glm::distance(translate[ship], translate[missile_2])) < (modelSize[missile_2] + modelSize[ship])) {
-		playerCollision = true;
-		printf("YOU DIED ");
-	}
-	if (abs(glm::distance(translate[missileBase_1], translate[missile_1])) < (modelSize[missileBase_1] + modelSize[missile_1])) {
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1])) {
 		missileBase1Collision = true;
 		fire = false;
 		printf("HIT ");
 	}
-	if (abs(glm::distance(translate[missileBase_2], translate[missile_1])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
+	if (glm::distance(getPosition(orientation[missile_2]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
 		missileBase1Collision = true;
 		fire = false;
 		printf("HIT ");
@@ -279,8 +275,8 @@ bool orientAt(int originObject, int targetObject){
 		return true;
 	}
 	else{
-		//if (colinear(originObjectAt, normTarget, .4)){
-			//no rotation axis
+		//if (distance(originObjectAt, normTarget) > .5){
+			//no rotation
 		//}
 		//else{
 			rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
