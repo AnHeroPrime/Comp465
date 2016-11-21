@@ -18,17 +18,19 @@ Steven Blachowiak, Aaron Scott
 # define __Windows__ 
 # include "../includes465/include465.hpp"
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, gravityMax = 90000000;
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, missile_3 = 10, gravityMax = 90000000;
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
 int speed = 10;
 int gravity = 0;
-int fire = 0;
 int accelerate = 0; //variables for movement keys
 int yaw = 0;
 int pitch = 0;
 int roll = 0;
+bool fire = false;
+bool unumBaseFire = false;
+bool moonBaseFire = false;
 bool nextCam = false;
 bool previousCam = false;
 bool warp = false;
@@ -38,12 +40,12 @@ bool missileBase1Collision = false;
 bool missileBase2Collision = false;
 bool initialUpdate = true;
 // constants for models:  file names, vertex count, model display size
-const int nModels = 10;  // number of models in this scene
-char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri" };
+const int nModels = 11;  // number of models in this scene
+char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri" };
 float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
 float gravityForce;
-const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3 };
+const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3 };
 char * vertexShaderFile   = "simpleVertex.glsl";     
 char * fragmentShaderFile = "simpleFragment.glsl";    
 GLuint shaderProgram; 
@@ -54,10 +56,10 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 100.0f, 25.0f, 30.0f, 30.0f };   // size of model
-float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f };
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 100.0f, 25.0f, 30.0f, 30.0f, 25.0f };   // size of model
+float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f };
 glm::vec3 scale[nModels];       // set in init()
-glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0) };
+glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0) };
 glm::mat4 rotation[nModels];
 glm::mat4 orientation[nModels];
 
@@ -145,14 +147,12 @@ void update(int i) {
 		// missile updates
 		if (m == missile_1){
 			if (fire == false){
-				//printf("fire = FALSE");
 				translate[m] = getPosition(orientation[ship]);
 				rotation[m] = rotation[ship];
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
 			}
 			if (fire == true) {
-				missileTimerCount++;
-
+				missileTimerCount++; // player missle timer
 				translate[m] = translate[m] + getIn(rotation[m]) * 20.0f; // move missile forward
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 
@@ -169,22 +169,35 @@ void update(int i) {
 				}
 			}
 		}
-		else if (m == missile_2){
-			orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0,0,0));
+		else if (m == missile_2){ // unum base missle updates
+			if (distance(getPosition(orientation[missileBase_1]),getPosition(orientation[ship])) > 5000){ // proximity check
+				unumBaseFire = true;
+			}
+			
+			if (unumBaseFire == false){
+				translate[m] = getPosition(orientation[missileBase_1]);
+				rotation[m] = rotation[missileBase_1];
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0, 0, 0));
+			}
+			if (unumBaseFire == true){
+				translate[m] = translate[m] + getIn(rotation[m]) * 5.0f; // move missile forward
+				missileTracking(missile_2);
+				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, scale[m]);
+			}
 		}
 	}
 
 	if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[ruber])) < (modelSize[ruber] + modelSize[ship])) {
 		playerCollision = true;
-		printf("YOU DIED ");
+		printf("Sun Collision");
 	}
 	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[unum])) < (modelSize[unum] + modelSize[ship])) {
 		playerCollision = true;
-		printf("YOU DIED ");
+		printf("Unum Collision");
 	}
 	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[duo])) < (modelSize[duo] + modelSize[ship])) {
 		playerCollision = true;
-		printf("YOU DIED ");
+		printf("Duo Collision");
 	}
 	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[primus])) < (modelSize[primus] + modelSize[ship])) {
 		playerCollision = true;
@@ -196,17 +209,17 @@ void update(int i) {
 	}
 	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[missile_2])) < (modelSize[missile_2] + modelSize[ship])) {
 		playerCollision = true;
-		printf("YOU DIED ");
+		printf("missile_2 HIT");
 	}
 	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1])) {
 		missileBase1Collision = true;
 		fire = false;
-		printf("HIT ");
+		printf("Base1 HIT ");
 	}
-	if (glm::distance(getPosition(orientation[missile_2]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
 		missileBase1Collision = true;
 		fire = false;
-		printf("HIT ");
+		printf("Base2 HIT ");
 	}
 
 	pitch = yaw = roll = accelerate = 0; //stop rotations if key is let go of
@@ -221,13 +234,13 @@ void missileTracking(int missile){
 
 	if (missile == missile_1){ // missile is fired from the ship, pick closest base
 		if (distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_1])) < distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_2]))){
-			target = missileBase_1;
+			target = missileBase_1; // target unum base
 		}
 		else{ 
-			target = missileBase_2;
+			target = missileBase_2; // target moon base
 		}
 	}
-	if (missile == missile_2){ // missle is fired from a base, its target is the ship
+	else { // missle is fired from a base, its target is the ship
 		target = ship;
 	}
 
@@ -275,12 +288,12 @@ bool orientAt(int originObject, int targetObject){
 		return true;
 	}
 	else{
-		//if (distance(originObjectAt, normTarget) > .5){
+		if (distance(getPosition(orientation[originObject]), getPosition(orientation[targetObject])) < 20){
 			//no rotation
-		//}
-		//else{
+		}
+		else{
 			rotation[originObject] = glm::rotate(rotation[originObject], radian, rotationAxis);
-		//}
+		}
 		return false;
 	}
 }
