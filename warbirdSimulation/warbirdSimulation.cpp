@@ -56,7 +56,7 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 100.0f, 25.0f, 30.0f, 30.0f, 25.0f };   // size of model
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 500.0f, 25.0f, 30.0f, 30.0f, 25.0f };   // size of model
 float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f };
 glm::vec3 scale[nModels];       // set in init()
 glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0) };
@@ -211,12 +211,12 @@ void update(int i) {
 		playerCollision = true;
 		printf("missile_2 HIT");
 	}
-	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1])) {
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1] + 50)) {
 		missileBase1Collision = true;
 		fire = false;
 		printf("Base1 HIT ");
 	}
-	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1])) {
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1] + 50)) {
 		missileBase1Collision = true;
 		fire = false;
 		printf("Base2 HIT ");
@@ -288,7 +288,7 @@ bool orientAt(int originObject, int targetObject){
 		return true;
 	}
 	else{
-		if (distance(getPosition(orientation[originObject]), getPosition(orientation[targetObject])) < 20){
+		if (distance(normTarget,originObjectAt) < 1){
 			//no rotation
 		}
 		else{
@@ -391,6 +391,9 @@ void keyboard(unsigned char key, int x, int y) {
 			if (fire == false && canFire){
 				fire = true;
 				playerMissileCount--;
+				if (playerMissileCount == 0){
+					canFire = false;
+				}
 				//missileTimerCount = frameCount;
 			}
 			break;
