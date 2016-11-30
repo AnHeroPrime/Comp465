@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{5f4b7ef5-f0fb-4339-ab95-a36bf0bb86b9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="warbirdSimulation.cpp">
@@ -26,5 +29,19 @@
     <ClInclude Include="..\includes465\include465.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="phase3Fragment.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="phase3Vertex.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="simpleFragment.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="simpleVertex.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

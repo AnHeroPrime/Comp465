@@ -56,7 +56,7 @@ GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 500.0f, 25.0f, 30.0f, 30.0f, 25.0f };   // size of model
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 25.0f, 25.0f, 30.0f, 30.0f, 25.0f };   // size of model
 float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f };
 glm::vec3 scale[nModels];       // set in init()
 glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0) };
@@ -73,12 +73,17 @@ char fpsStr[15];
 char missileStr[50];
 char viewStr[50] = "Camera: Ship View | ";
 char baseStr[50] = "Warbird Simulation | ";
+char base1Str[50] = "Unum base: Active | ";
+char base2Str[50] = "Moon base: Active | ";
+char gameStr[50] = "";
 char titleStr[500];
 int playerMissileCount = 9; // Player Missile Count
 int base1MissileCount = 5;
 int base2MissileCount = 5;
 int frameCount = 0;
 int missileTimerCount = 0;
+int missile2TimerCount = 0;
+int missile3TimerCount = 0;
 double currentTime, lastTime, timeInterval;
 glm::mat4 identity(1.0f);
 
@@ -103,6 +108,21 @@ void updateTitle() {
 	strcat(titleStr, viewStr);
 	strcat(titleStr, fpsStr);
 	strcat(titleStr, missileStr);
+	if (missileBase1Collision){
+		 strcpy(base1Str,"Unum base: Destroyed | ");
+	}
+	if (missileBase2Collision){
+		strcpy(base2Str,"Moon base: Destroyed | ");
+	}
+	if (missileBase1Collision && missileBase2Collision){
+		strcpy(gameStr, "***YOU WIN*** | ");
+	}
+	if (playerCollision){
+		strcpy(gameStr, "***YOU DIED*** | ");
+	}
+	strcat(titleStr, base1Str);
+	strcat(titleStr, base2Str);
+	strcat(titleStr, gameStr);
 	glutSetWindowTitle(titleStr);
 }
 
@@ -135,12 +155,25 @@ void update(int i) {
 				translate[m] = getPosition(orientation[m]) + gravityVector * gravityForce;
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 			}
+			if(playerCollision){
+				orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(0, 0, 0));
+			}
 		}
 		else{ // orbits
 			rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+			if (m == missileBase_1){
+				if (missileBase1Collision){
+					orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(0,0,0));
+				}
+			}
 			if (m == primus || m == secundus || m == missileBase_2){	// lunar orbits
 				orientation[m] = glm::translate(identity, getPosition(orientation[duo])) * glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0)) * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+				if (m == missileBase_2){
+					if (missileBase2Collision){
+						orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(0, 0, 0));
+					}
+				}
 			}
 		}
 
@@ -169,19 +202,24 @@ void update(int i) {
 				}
 			}
 		}
-		else if (m == missile_2){ // unum base missle updates
+		else if (m == missile_2 && !missileBase1Collision){ // unum missle updates
 			if (distance(getPosition(orientation[missileBase_1]),getPosition(orientation[ship])) > 5000){ // proximity check
 				unumBaseFire = true;
 			}
-			
 			if (unumBaseFire == false){
 				translate[m] = getPosition(orientation[missileBase_1]);
 				rotation[m] = rotation[missileBase_1];
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0, 0, 0));
 			}
 			if (unumBaseFire == true){
+				missile2TimerCount++;
 				translate[m] = translate[m] + getIn(rotation[m]) * 5.0f; // move missile forward
-				missileTracking(missile_2);
+				if (missile2TimerCount > 200){ // start tracking after 200 updates
+					missileTracking(missile_2);
+				}
+				if (missile2TimerCount > 2000){ // kill missle after 2000 updates
+					unumBaseFire = false;
+				}
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, scale[m]);
 			}
 		}
@@ -209,15 +247,16 @@ void update(int i) {
 	}
 	else if (glm::distance(getPosition(orientation[ship]), getPosition(orientation[missile_2])) < (modelSize[missile_2] + modelSize[ship])) {
 		playerCollision = true;
+		unumBaseFire = false;
 		printf("missile_2 HIT");
 	}
-	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1] + 50)) {
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1] + 100)) {
 		missileBase1Collision = true;
 		fire = false;
 		printf("Base1 HIT ");
 	}
-	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1] + 50)) {
-		missileBase1Collision = true;
+	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1] + 100)) {
+		missileBase2Collision = true;
 		fire = false;
 		printf("Base2 HIT ");
 	}
@@ -230,23 +269,28 @@ void update(int i) {
 }
 
 void missileTracking(int missile){
-	int target;
+	
+	int target = -1;
 
 	if (missile == missile_1){ // missile is fired from the ship, pick closest base
 		if (distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_1])) < distance(getPosition(orientation[missile]), getPosition(orientation[missileBase_2]))){
-			target = missileBase_1; // target unum base
+			if (!missileBase1Collision){
+				target = missileBase_1; // target unum base
+			}
 		}
 		else{ 
-			target = missileBase_2; // target moon base
+			if (!missileBase2Collision){
+				target = missileBase_2; // target moon base
+			}
 		}
 	}
 	else { // missle is fired from a base, its target is the ship
 		target = ship;
 	}
 
-	//if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) > 5000){ // if no target is found within 5000 units set target to -1
-	//	target = -1;
-	//}
+	if (distance(getPosition(orientation[missile]), getPosition(orientation[target])) > 5000){ // if no target is found within 5000 units set target to -1
+		target = -1;
+	}
 
 	if (target > 0){ // if missile has a target, track target
 		orientAt(missile, target);
@@ -280,7 +324,7 @@ bool orientAt(int originObject, int targetObject){
 	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
 	float rotationRads = glm::dot(normTarget, originObjectAt);
 	radian = (2 * PI) - glm::acos(rotationRads);
-	if (colinear(originObjectAt, normTarget, .1)){ // check for colinearity
+	if (colinear(originObjectAt, normTarget, .05)){ // check for colinearity
 		if (distance(getPosition(orientation[originObject]) + originObjectAt, target) > distance(getPosition(orientation[originObject]), target)){ // check for bad colinear situations
 			rotation[originObject] = glm::rotate(rotation[originObject], PI, getUp(rotation[originObject])); // turn missle around
 			printf("BAD_COLINEAR");
@@ -288,7 +332,7 @@ bool orientAt(int originObject, int targetObject){
 		return true;
 	}
 	else{
-		if (distance(normTarget,originObjectAt) < 1){
+		if (distance(normTarget,originObjectAt) < .2){
 			//no rotation
 		}
 		else{
@@ -321,8 +365,15 @@ glm::mat4 cameraUpdate(int cam){
 		cam = currentCam;
 	}
 	if (cam == 1){ // ship
-		sprintf(viewStr,"Camera: Ship View | ");
-		return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), getUp(rotation[ship])));
+		if (!playerCollision){
+			sprintf(viewStr, "Camera: Ship View | ");
+			return (glm::lookAt(getPosition(orientation[ship]) - getIn(rotation[ship]) * 1000.0f + getUp(rotation[ship]) * 300.0f, getPosition(orientation[ship] * glm::translate(identity, glm::vec3(0.0f, 300.0f, 0.0f))), getUp(rotation[ship])));
+		}
+		else{
+			currentCam++;
+			sprintf(viewStr, "Camera: Top View | ");
+			return (glm::lookAt(glm::vec3(0.0f, 20000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+		}
 	}
 	else if (cam == 2){ //top view
 		sprintf(viewStr, "Camera: Top View | ");
@@ -352,7 +403,9 @@ void keyboard(unsigned char key, int x, int y) {
 			previousCam = true;
 			break;
 		case 'w':  // warp
-			warp = true;
+			if (!playerCollision){
+				warp = true;
+			}
 			break;
 		case 't':  // TimeQuantum
 			if (TQ == 5){ //trainee
@@ -388,7 +441,7 @@ void keyboard(unsigned char key, int x, int y) {
 			}
 			break;
 		case 'f': //fire
-			if (fire == false && canFire){
+			if (fire == false && canFire && !playerCollision){
 				fire = true;
 				playerMissileCount--;
 				if (playerMissileCount == 0){
@@ -405,32 +458,34 @@ void keyboard(unsigned char key, int x, int y) {
 
 void specialKeys(int key, int x, int y) {
 	int modifier = glutGetModifiers(); //checks for control key
-	if (modifier == GLUT_ACTIVE_CTRL) {
-		if (key == GLUT_KEY_UP) {
-			pitch = 1;
+	if (!playerCollision){
+		if (modifier == GLUT_ACTIVE_CTRL) {
+			if (key == GLUT_KEY_UP) {
+				pitch = 1;
+			}
+			else if (key == GLUT_KEY_DOWN) {
+				pitch = -1;
+			}
+			if (key == GLUT_KEY_RIGHT) {
+				roll = 1;
+			}
+			else if (key == GLUT_KEY_LEFT) {
+				roll = -1;
+			}
 		}
-		else if (key == GLUT_KEY_DOWN) {
-			pitch = -1;
-		}
-		if (key == GLUT_KEY_RIGHT) {
-			roll = 1;
-		}
-		else if (key == GLUT_KEY_LEFT) {
-			roll = -1;
-		}
-	}
-	else {
-		if (key == GLUT_KEY_UP) {
-			accelerate = 1;
-		}
-		else if (key == GLUT_KEY_DOWN) {
-			accelerate = -1;
-		}
-		if (key == GLUT_KEY_RIGHT) {
-			yaw = -1;
-		}
-		else if (key == GLUT_KEY_LEFT) {
-			yaw = 1;
+		else {
+			if (key == GLUT_KEY_UP) {
+				accelerate = 1;
+			}
+			else if (key == GLUT_KEY_DOWN) {
+				accelerate = -1;
+			}
+			if (key == GLUT_KEY_RIGHT) {
+				yaw = -1;
+			}
+			else if (key == GLUT_KEY_LEFT) {
+				yaw = 1;
+			}
 		}
 	}
 }
