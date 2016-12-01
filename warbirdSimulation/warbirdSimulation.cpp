@@ -187,14 +187,14 @@ void update(int i) {
 			if (fire == true) {
 				missileTimerCount++; // player missle timer
 
-				translate[m] = (translate[m] + getIn(orientation[m]) * 760.0f); // move missile forward
+				translate[m] = (translate[m] + getIn(orientation[m]) * 800.0f); // move missile forward
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(scale[m]));
 
 				if (missileTimerCount > 200){ // start missile tracking after 200 frames
 					missileTracking(missile_1);
 				}
 
-				if (missileTimerCount >= 2000){ // kill missile after 2000 frames
+				if (missileTimerCount >= 2000){ // kill missle after 2000 frames
 					missileTimerCount = 0;
 					fire = false;
 					if (playerMissileCount == 0){
@@ -203,7 +203,7 @@ void update(int i) {
 				}
 			}
 		}
-		else if (m == missile_2 && !missileBase1Collision){ // unum missile updates
+		else if (m == missile_2 && !missileBase1Collision){ // unum missle updates
 
 			if (unumBaseFire == false || missileBase1Collision){ // set missles translation and rotation matrix to that of the base
 				translate[m] = getPosition(orientation[missileBase_1]);
@@ -218,16 +218,15 @@ void update(int i) {
 			if (unumBaseFire == true){
 				missile2TimerCount++;
 
-				translate[m] = translate[m] + getIn(orientation[m]) * 300.0f; // move missile forward
+				translate[m] = translate[m] + getIn(orientation[m]) * 400.0f; // move missile forward
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, scale[m]);
 
 				//if (missile2TimerCount > 200){ // start tracking after 200 updates
 					missileTracking(missile_2);
 				//}
-				if (missile2TimerCount > 2000){ // kill missile after 2000 updates
+				if (missile2TimerCount > 2000){ // kill missle after 2000 updates
 					unumBaseFire = false;
 					missile2TimerCount = 0;
-					orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0, 0, 0));
 				}
 			}
 		}
@@ -246,7 +245,7 @@ void update(int i) {
 			if (moonBaseFire == true){
 				missile3TimerCount++;
 				
-				translate[m] = translate[m] + getIn(orientation[m]) * 300.0f; // move missile forward
+				translate[m] = translate[m] + getIn(orientation[m]) * 400.0f; // move missile forward
 				orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, scale[m]);
 				
 				//if (missile3TimerCount > 200){ // start tracking after 200 updates
@@ -255,7 +254,6 @@ void update(int i) {
 				if (missile3TimerCount > 2000){ // kill missle after 2000 updates
 					moonBaseFire = false;
 					missile3TimerCount = 0;
-					orientation[m] = glm::translate(identity, translate[m]) * rotation[m] * glm::scale(identity, glm::vec3(0, 0, 0));
 				}
 			
 			}
@@ -360,13 +358,13 @@ bool orientAt(int originObject, int targetObject){
 	glm::vec3 originObjectAt = getIn(rotation[originObject]);
 	glm::vec3 target = getPosition(orientation[targetObject]) - getPosition(orientation[originObject]);
 	glm::vec3 normTarget = glm::normalize(target); // normalized target vector
-	glm::vec3 rotationAxis = glm::vec3(0, 0, 0);
+	glm::vec3 rotationAxis = glm::vec3(0, 0, 0);//
 	rotationAxis = glm::cross(normTarget, originObjectAt);
 	rotationAxis = glm::normalize(rotationAxis);
 	float rotationAxisDirection = rotationAxis.x + rotationAxis.y + rotationAxis.z;
 	float rotationRads = glm::dot(normTarget, originObjectAt);
 	radian = (2 * PI) - glm::acos(rotationRads);
-	if (colinear(originObjectAt, normTarget, .05)){ // check for colinearity
+	if (colinear(originObjectAt, normTarget, .08)){ // check for colinearity
 		if (distance(getPosition(orientation[originObject]) + originObjectAt, target) > distance(getPosition(orientation[originObject]), target)){ // check for bad colinear situations
 			rotation[originObject] = glm::rotate(rotation[originObject], PI, getUp(rotation[originObject])); // turn missle around
 			//printf("BAD_COLINEAR");
