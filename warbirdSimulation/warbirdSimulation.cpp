@@ -293,11 +293,13 @@ void update(int i) {
 	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_1])) < (modelSize[missileBase_1] + modelSize[missile_1] + 100)) {
 		missileBase1Collision = true;
 		fire = false;
+		translate[missile_2] = glm::vec3(0, 0, 0);
 		printf("Base1 HIT ");
 	}
 	if (glm::distance(getPosition(orientation[missile_1]), getPosition(orientation[missileBase_2])) < (modelSize[missileBase_2] + modelSize[missile_1] + 100)) {
 		missileBase2Collision = true;
 		fire = false;
+		translate[missile_3] = glm::vec3(0, 0, 0);
 		printf("Base2 HIT ");
 	}
 
