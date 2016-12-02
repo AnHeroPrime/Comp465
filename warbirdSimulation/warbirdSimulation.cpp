@@ -46,14 +46,17 @@ float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
 float gravityForce;
 const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3 };
-char * vertexShaderFile   = "simpleVertex.glsl";     
-char * fragmentShaderFile = "simpleFragment.glsl";    
+char * vertexShaderFile   = "phase3Vertex.glsl";     
+char * fragmentShaderFile = "phase3Fragment.glsl";    
 GLuint shaderProgram; 
 GLuint VAO[nModels];      // Vertex Array Objects
 GLuint buffer[nModels];   // Vertex Buffer Objects
 
 // Shader handles, matrices, etc
 GLuint MVP ;  // Model View Projection matrix's handle
+GLuint MV; // ModelView handle
+GLuint NM; // NormalMatrix handle
+
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
 float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f };   // size of model
@@ -65,6 +68,8 @@ glm::mat4 orientation[nModels];
 
 glm::mat4 modelMatrix;          // set in display()
 glm::mat4 viewMatrix;           // set in init()
+glm::mat4 modelViewMatrix;		// set in display()
+glm::mat3 normalMatrix;
 glm::mat4 projectionMatrix;     // set in reshape()
 glm::mat4 ModelViewProjectionMatrix; // set in display();
 
@@ -539,8 +544,12 @@ void display() {
   glClearColor(0,0,0,0);
 	for (int m = 0; m < nModels; m++) {
 		modelMatrix = orientation[m];
-		ModelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+		modelViewMatrix = viewMatrix * modelMatrix;
+		normalMatrix = glm::mat3(modelViewMatrix);
+		ModelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
 		glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
+		glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+		glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 		glBindVertexArray(VAO[m]);
 		glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
 	}
@@ -574,13 +583,17 @@ void init() {
     scale[i] = glm::vec3(modelSize[i] * 1.0f / modelBR[i]);
 	
     }
-  
-  MVP = glGetUniformLocation(shaderProgram, "ModelViewProjection");
 
-  viewMatrix = glm::lookAt(
+   viewMatrix = glm::lookAt(
 	glm::vec3(0.0f, 20000.0f, 0.0f),  // eye position
     glm::vec3(0),                   // look at position
-    glm::vec3(0.0f, 0.0f, -1.0f)); // up vect0r
+    glm::vec3(0.0f, 0.0f, -1.0f)); // up vector 
+
+  MVP = glGetUniformLocation(shaderProgram, "ModelViewProjection");
+  MV = glGetUniformLocation(shaderProgram, "ModelView");
+  NM = glGetUniformLocation(shaderProgram, "NormalMatrix");
+
+
 
   // set render state values
   glEnable(GL_DEPTH_TEST);

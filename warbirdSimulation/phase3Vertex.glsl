@@ -1,23 +1,25 @@
 /* 
-SimpleVertex.glsl
+phsae3Vertex.glsl
 
-Vertex shader with position, color, normal and ModelViewProject
-input and color output.
-
-Mike Barnes
-8/17/2013
 */
 
 # version 330 core
 
 in vec4 vPosition;
 in vec4 vColor;
-in vec3 vNormal;  // not used
+in vec3 vNormal;
 
-uniform mat4 ModelViewProjection;  // = projection * view * model
+out vec3 position;
+out vec3 normal;
 out vec4 color;
 
+uniform mat3 NormalMatrix; // = mat3 (view * model)
+uniform mat4 ModelView; // = view * model
+uniform mat4 ModelViewProjection;  // = projection * view * model
+
 void main() {
-  color = vColor;
-  gl_Position = ModelViewProjection * vPosition;
-  }
+	gl_Position = ModelViewProjection * vPosition;
+	position = (ModelView * vPosition).xyz;
+	normal = normalize(NormalMatrix * vNormal);
+	color = vColor;
+}
