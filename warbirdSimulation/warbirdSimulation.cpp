@@ -39,6 +39,9 @@ bool playerCollision = false;
 bool missileBase1Collision = false;
 bool missileBase2Collision = false;
 bool initialUpdate = true;
+bool pointLightSetOn = true;
+bool headLightSetOn = true;
+bool debugSetOn = false;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 12;  // number of models in this scene
 const int nTextures = 6; // number of textures
@@ -61,6 +64,13 @@ GLuint MVP ;  // Model View Projection matrix's handle
 GLuint MV; // ModelView handle
 GLuint NM; // NormalMatrix handle
 GLuint TEX; //Texture handle
+GLuint POINTLOCATION;
+GLuint POINTINTENSITY;
+GLuint POINTON;
+GLuint HEADON;
+GLuint HEADLOCATION;
+GLuint HEADINTENSITY;
+GLuint DEBUGON;
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
@@ -536,8 +546,29 @@ void keyboard(unsigned char key, int x, int y) {
 				//missileTimerCount = frameCount;
 			}
 			break;
-		case '1': //reset missle **Debug**
-			fire = false;
+		case 'p': // toggle point light
+			if (pointLightSetOn){
+				pointLightSetOn = false;
+			}
+			else{
+				pointLightSetOn = true;
+			}
+			break;
+		case 'h': // toggle point light
+			if (headLightSetOn){
+				headLightSetOn = false;
+			}
+			else{
+				headLightSetOn = true;
+			}
+			break;
+		case 'd': // light **Debug**
+			if (debugSetOn){
+				debugSetOn = false;
+			}
+			else{
+				debugSetOn = true;
+			}
 			break;
 	}
 }
@@ -590,6 +621,13 @@ void display() {
 			glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
 			glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 			glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+			glUniform3fv(POINTLOCATION, 1, glm::value_ptr(getPosition(orientation[ruber])));
+			glUniform3fv(POINTINTENSITY, 1, glm::value_ptr(glm::vec3(1, 1, 1)));
+			glUniform3fv(HEADLOCATION, 1, glm::value_ptr(getPosition(viewMatrix)));
+			glUniform3fv(HEADINTENSITY, 1, glm::value_ptr(glm::vec3(.5, .5, .5)));
+			glUniform1f(HEADON, headLightSetOn);
+			glUniform1f(POINTON, pointLightSetOn);
+			glUniform1f(DEBUGON, debugSetOn);
 			glBindVertexArray(VAO[m]);
 		if (m != skybox) {
 			glUniform1f(TEX, false);
@@ -679,7 +717,13 @@ void init() {
   MV = glGetUniformLocation(shaderProgram, "ModelView");
   NM = glGetUniformLocation(shaderProgram, "NormalMatrix");
   TEX = glGetUniformLocation(shaderProgram, "isTexture");
-
+  POINTLOCATION = glGetUniformLocation(shaderProgram, "PointLightPosition");
+  POINTINTENSITY = glGetUniformLocation(shaderProgram, "PointLightIntensity");
+  HEADLOCATION = glGetUniformLocation(shaderProgram, "HeadLightPosition");
+  HEADINTENSITY = glGetUniformLocation(shaderProgram, "HeadLightIntensity");
+  POINTON = glGetUniformLocation(shaderProgram, "PointLightOn");
+  HEADON = glGetUniformLocation(shaderProgram, "HeadLightOn");
+  DEBUGON = glGetUniformLocation(shaderProgram, "DebugOn");
 
 
   // set render state values
