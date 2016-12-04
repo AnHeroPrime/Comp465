@@ -60,7 +60,7 @@ GLuint ibo, vTexCoord; //indexBufferObject
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint MV; // ModelView handle
 GLuint NM; // NormalMatrix handle
-GLuint TEX; //Texture handle
+bool TEX; //Texture handle
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
@@ -590,14 +590,13 @@ void display() {
 			glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
 			glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 			glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-			
 			glBindVertexArray(VAO[m]);
 		if (m != skybox) {
-			
+			glUniform1f(TEX, false);
 			glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
 		}
 		else {
-			glUniform1f(TEX, m);
+			glUniform1f(TEX, true);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 			glDrawElements(GL_TRIANGLES, nVertices[m], GL_UNSIGNED_INT, BUFFER_OFFSET(0));
 		}
