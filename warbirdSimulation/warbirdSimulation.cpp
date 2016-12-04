@@ -554,7 +554,7 @@ void keyboard(unsigned char key, int x, int y) {
 				pointLightSetOn = true;
 			}
 			break;
-		case 'h': // toggle point light
+		case 'h': // toggle head light
 			if (headLightSetOn){
 				headLightSetOn = false;
 			}

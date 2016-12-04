@@ -13,12 +13,12 @@ out vec4 fragColor;
 
 uniform vec3 HeadLightPosition;
 uniform vec3 HeadLightIntensity;
-uniform vec3 PointLightPosition; // = vec3(0,0,0);
-uniform vec3 PointLightIntensity; // = vec3(1.0,1.0,1.0);
+uniform vec3 PointLightPosition; 
+uniform vec3 PointLightIntensity;
 
-uniform bool HeadLightOn; // = true; // toggles set in application
-uniform bool PointLightOn; // = true;
-uniform bool DebugOn; // = true; // glUniform1f(debugSetOn,debugOn);
+uniform bool HeadLightOn; // toggles set in application
+uniform bool PointLightOn; // toggles set in application
+uniform bool DebugOn; // glUniform1f(,);
 uniform sampler2D Texture;
 uniform bool isTexture;
 
@@ -49,10 +49,10 @@ vec3 vLight(vec3 LightPosition, vec3 LightIntensity, bool directional) {
 }
 
 void main() {
-	vec3 tempColor = vec3(color) * 0.1f; // initial value
-
+	vec3 tempColor = vec3(color) * 0.3f; // initial value
+	
 	if (HeadLightOn) {
-		tempColor += vLight(HeadLightPosition,HeadLightIntensity, true);
+		tempColor += vLight(HeadLightPosition, HeadLightIntensity, true);
 	}
 	if (PointLightOn){ 
 		tempColor += vLight(PointLightPosition, PointLightIntensity, false);	
@@ -62,7 +62,5 @@ void main() {
 	}else{
 		fragColor = vec4(tempColor, 1.0);
 	}
-	
-	
 	//fragColor = color;
 }
