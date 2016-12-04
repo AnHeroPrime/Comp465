@@ -18,7 +18,7 @@ Steven Blachowiak, Aaron Scott
 # define __Windows__ 
 # include "../includes465/include465.hpp"
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, missile_3 = 10, gravityMax = 90000000;
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, missile_3 = 10, skybox = 11, gravityMax = 90000000;
 int currentWarp = 1; // Warp set to Unum
 int currentCam = 1; // start in ship view
 int TQ = 5;
@@ -40,31 +40,69 @@ bool missileBase1Collision = false;
 bool missileBase2Collision = false;
 bool initialUpdate = true;
 // constants for models:  file names, vertex count, model display size
-const int nModels = 11;  // number of models in this scene
-char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri" };
+const int nModels = 12;  // number of models in this scene
+const int nTextures = 6; // number of textures
+char * textureFiles[nTextures] = { "left.raw", "right.raw", "top.raw", "bottom.raw", "front.raw", "back.raw" };
+char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri","" };
 float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
 float gravityForce;
-const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3 };
+const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3, 2 * 3 };
 char * vertexShaderFile   = "phase3Vertex.glsl";     
-char * fragmentShaderFile = "phase3Fragment.glsl";    
-GLuint shaderProgram; 
+char * fragmentShaderFile = "phase3Fragment.glsl"; 
+GLuint shaderProgram;
+GLuint textures[nTextures];
 GLuint VAO[nModels];      // Vertex Array Objects
 GLuint buffer[nModels];   // Vertex Buffer Objects
+GLuint ibo, vTexCoord; //indexBufferObject
 
 // Shader handles, matrices, etc
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint MV; // ModelView handle
 GLuint NM; // NormalMatrix handle
+GLuint TEX; //Texture handle
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f };   // size of model
-float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f };
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 70000.0f};   // size of model
+float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f, 0.0f};
 glm::vec3 scale[nModels];       // set in init()
-glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0) };
+glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0) };
 glm::mat4 rotation[nModels];
 glm::mat4 orientation[nModels];
+
+static const GLfloat skyboxPoints[] = {
+	-1.0f, -1.0f,  1.0f, 1.0f, // 0 bottom left back corner
+	-1.0f, -1.0f, -1.0f, 1.0f, // 1 bottom left forward corner
+	-1.0f,  1.0f,  1.0f, 1.0f, // 2 top left back corner
+	-1.0f,  1.0f, -1.0f, 1.0f, // 3 top left forward corner
+	 //1.0f, -1.0f,  1.0f, 1.0f, // 4 bottom right back corner
+	 //1.0f, -1.0f, -1.0f, 1.0f, // 5 bottom right forward corner
+	 //1.0f,  1.0f,  1.0f, 1.0f, // 6 top right back corner
+	 //1.0f,  1.0f, -1.0f, 1.0f  // 7 top right forward corner
+};
+
+static const unsigned int indices[] = {
+	0, 1, 2, // 0 left square bottom
+	1, 2, 3, // 1 left square top
+	//4, 5, 6, // 2 right square bottom
+	//5, 6, 7, // 3 right square top
+	//2, 3, 6, // 4 top square back
+	//3, 6, 7, // 5 top square forward
+	//0, 1, 4, // 6 bottom square back
+	//1, 4, 5, // 7 bottom square forward
+	//1, 3, 5, // 8 front square bottom
+	//3, 5, 7, // 9 front square top
+	//0, 2, 4, // 10 back square bottom
+	//2, 4, 6, // 11 back square top
+};
+
+static const GLfloat texCoords[] = {
+	0.0f, 0.0f,     // 0 bottom left
+	1.0f, 0.0f,     // 1 bottom right
+	0.0f, 1.0f,     // 2 top left
+	1.0f, 1.0f,     // 3 top right
+};
 
 glm::mat4 modelMatrix;          // set in display()
 glm::mat4 viewMatrix;           // set in init()
@@ -167,6 +205,7 @@ void update(int i) {
 		else{ // orbits
 			rotation[m] = glm::rotate(rotation[m], modelRadians[m], glm::vec3(0, 1, 0));
 			orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+		
 			if (m == missileBase_1){
 				if (missileBase1Collision){
 					orientation[m] = rotation[m] * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(0,0,0));
@@ -543,15 +582,25 @@ void display() {
   // update model matrix
   glClearColor(0,0,0,0);
 	for (int m = 0; m < nModels; m++) {
-		modelMatrix = orientation[m];
-		modelViewMatrix = viewMatrix * modelMatrix;
-		normalMatrix = glm::mat3(modelViewMatrix);
-		ModelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
-		glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
-		glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-		glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-		glBindVertexArray(VAO[m]);
-		glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
+		
+			modelMatrix = orientation[m];
+			modelViewMatrix = viewMatrix * modelMatrix;
+			normalMatrix = glm::mat3(modelViewMatrix);
+			ModelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
+			glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
+			glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+			
+			glBindVertexArray(VAO[m]);
+		if (m != skybox) {
+			
+			glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
+		}
+		else {
+			glUniform1f(TEX, m);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+			glDrawElements(GL_TRIANGLES, nVertices[m], GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		}
 	}
   glutSwapBuffers();
   frameCount++;
@@ -568,17 +617,55 @@ void display() {
 
 // load the shader programs, vertex data from model files, create the solids, set initial view
 void init() {
-  // load the shader programs
-  shaderProgram = loadShaders(vertexShaderFile,fragmentShaderFile);
-  glUseProgram(shaderProgram);
-  
+	// load the shader programs
+	shaderProgram = loadShaders(vertexShaderFile, fragmentShaderFile);
+	glUseProgram(shaderProgram);
+
+	//load in textures
+	/*
+	for (int i = 0; i < nTextures; i++) { //read in skybox textures
+		textures[i] = loadRawTexture(textures[i], textureFiles[i], 1024, 1024);		
+	}
+	*/
+	GLuint texture = loadRawTexture(textures[2], textureFiles[2], 1024, 1024);
+	
   // generate VAOs and VBOs
   glGenVertexArrays( nModels, VAO );
   glGenBuffers( nModels, buffer );
+  glGenBuffers(1, &ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  // set up the indexed skybox vertex attributes
+  glBindVertexArray(VAO[skybox]);
+
+  // initialize a buffer object
+  glEnableVertexAttribArray(buffer[skybox]);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer[skybox]);
+ 
+  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxPoints) + sizeof(texCoords), NULL, GL_STATIC_DRAW);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(skyboxPoints), skyboxPoints);
+  glBufferSubData(GL_ARRAY_BUFFER, sizeof(skyboxPoints), sizeof(texCoords), texCoords);
+ 
+
+  // set up vertex arrays (after shaders are loaded)
+  vPosition[skybox] = glGetAttribLocation(shaderProgram, "vPosition");
+  glVertexAttribPointer(vPosition[skybox], 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+  glEnableVertexAttribArray(vPosition[skybox]);
+
+  vTexCoord = glGetAttribLocation(shaderProgram, "vTexCoord");
+  glVertexAttribPointer(vTexCoord, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(skyboxPoints)));
+  glEnableVertexAttribArray(vTexCoord);
   // load the buffers from the model files
+
   for (int i = 0; i < nModels; i++) {
-    modelBR[i] = loadModelBuffer(modelFile[i], nVertices[i], VAO[i], buffer[i], shaderProgram,
-      vPosition[i], vColor[i], vNormal[i], "vPosition", "vColor", "vNormal"); 
+	  if (i != skybox) {
+		  modelBR[i] = loadModelBuffer(modelFile[i], nVertices[i], VAO[i], buffer[i], shaderProgram,
+			  vPosition[i], vColor[i], vNormal[i], "vPosition", "vColor", "vNormal");
+	  }
+	  else { //skybox
+		  modelBR[i] = 1;
+	  }
     // set scale for models given bounding radius  
     scale[i] = glm::vec3(modelSize[i] * 1.0f / modelBR[i]);
 	
@@ -592,6 +679,7 @@ void init() {
   MVP = glGetUniformLocation(shaderProgram, "ModelViewProjection");
   MV = glGetUniformLocation(shaderProgram, "ModelView");
   NM = glGetUniformLocation(shaderProgram, "NormalMatrix");
+  TEX = glGetUniformLocation(shaderProgram, "isTexture");
 
 
 
