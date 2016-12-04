@@ -60,7 +60,7 @@ GLuint ibo, vTexCoord; //indexBufferObject
 GLuint MVP ;  // Model View Projection matrix's handle
 GLuint MV; // ModelView handle
 GLuint NM; // NormalMatrix handle
-bool TEX; //Texture handle
+GLuint TEX; //Texture handle
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
