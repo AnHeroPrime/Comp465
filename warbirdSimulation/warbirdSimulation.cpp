@@ -72,6 +72,7 @@ GLuint HEADLOCATION;
 GLuint HEADINTENSITY;
 GLuint DEBUGON;
 
+
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
 float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 70000.0f};   // size of model
@@ -106,6 +107,52 @@ static const unsigned int indices[] = {
 	//0, 2, 4, // 10 back square bottom
 	//2, 4, 6, // 11 back square top
 };
+/* part 1 of texture fix that didn't work
+
+const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, missile_3 = 10, skyboxStart = 11, skyboxEnd = 16, gravityMax = 90000000;
+const int nModels = 17;  // number of models in this scene
+char * textureFiles[nTextures] = { "left.raw", "right.raw", "top.raw", "bottom.raw", "front.raw", "back.raw" };
+char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri","","","","","","" };
+const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3, 2 * 3, 2 * 3, 2 * 3 , 2 * 3 , 2 * 3 , 2 * 3};
+GLuint ibo[nTextures];  //indexBufferObject
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 100000.0f, 100000.0f , 100000.0f , 100000.0f , 100000.0f , 100000.0f };   // size of model
+float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f , 0.0f , 0.0f , 0.0f , 0.0f };
+glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0) };
+GLuint vPosition[nModels], vColor[nModels], vNormal[nModels], vTexCoord[nTextures]; // vPosition, vColor, vNormal,vTexCoord handles for models
+
+static const unsigned int left[] = {
+	0, 1, 2, // 0 left square bottom
+	1, 2, 3, // 1 left square top
+};
+static const unsigned int right[] = {
+	4, 5, 6, // 2 right square bottom
+	5, 6, 7, // 3 right square top
+};
+static const unsigned int top[] = {
+	2, 3, 6, // 4 top square back
+	3, 6, 7, // 5 top square forward
+};
+static const unsigned int bottom[] = {
+	0, 1, 4, // 6 bottom square back
+	1, 4, 5, // 7 bottom square forward
+};
+static const unsigned int front[] = {
+	1, 3, 5, // 8 front square bottom
+	3, 5, 7, // 9 front square top
+};
+static const unsigned int back[] = {
+	0, 2, 4, // 10 back square bottom
+	2, 4, 6, // 11 back square top
+};
+static const unsigned int * indices[] = {
+	left,
+	right,
+	top,
+	bottom,
+	front,
+	back
+};
+*/
 
 static const GLfloat texCoords[] = {
 	0.0f, 0.0f,     // 0 bottom left
@@ -629,6 +676,9 @@ void display() {
 			glUniform1f(POINTON, pointLightSetOn);
 			glUniform1f(DEBUGON, debugSetOn);
 			glBindVertexArray(VAO[m]);
+			/* part 2 of texture fix that didn't work
+			if ((m >= skyboxStart) && (m <= skyboxEnd))
+			*/
 		if (m != skybox) {
 			glUniform1f(TEX, false);
 			glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
@@ -693,9 +743,44 @@ void init() {
   vTexCoord = glGetAttribLocation(shaderProgram, "vTexCoord");
   glVertexAttribPointer(vTexCoord, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(skyboxPoints)));
   glEnableVertexAttribArray(vTexCoord);
+
+
+  /* part 3 of texture fix that didn't work
+  for (int i = 0; i < nTextures; i++) { //read in skybox textures
+		textures[i] = loadRawTexture(textures[i], textureFiles[i], 1024, 1024);
+		arrayIndex = i + 11;
+
+		glGenBuffers(1, &ibo[i]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo[i]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[i]), indices[i], GL_STATIC_DRAW);
+
+		// set up the indexed skybox vertex attributes
+		glBindVertexArray(VAO[arrayIndex]);
+
+		// initialize a buffer object
+		glEnableVertexAttribArray(buffer[arrayIndex]);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer[arrayIndex]);
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxPoints) + sizeof(texCoords), NULL, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(skyboxPoints), skyboxPoints);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(skyboxPoints), sizeof(texCoords), texCoords);
+
+
+		// set up vertex arrays (after shaders are loaded)
+		vPosition[arrayIndex] = glGetAttribLocation(shaderProgram, "vPosition");
+		glVertexAttribPointer(vPosition[arrayIndex], 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+		glEnableVertexAttribArray(vPosition[arrayIndex]);
+
+		vTexCoord[i] = glGetAttribLocation(shaderProgram, "vTexCoord");
+		glVertexAttribPointer(vTexCoord[i], 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(skyboxPoints)));
+		glEnableVertexAttribArray(vTexCoord[i]);*/
+
   // load the buffers from the model files
 
   for (int i = 0; i < nModels; i++) {
+	  /* part 4 of texture fix that didn't work
+	  if ((i >= skyboxStart) && (i <= skyboxEnd)) {
+	  */
 	  if (i != skybox) {
 		  modelBR[i] = loadModelBuffer(modelFile[i], nVertices[i], VAO[i], buffer[i], shaderProgram,
 			  vPosition[i], vColor[i], vNormal[i], "vPosition", "vColor", "vNormal");
