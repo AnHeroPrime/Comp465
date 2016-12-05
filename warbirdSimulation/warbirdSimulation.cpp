@@ -42,6 +42,7 @@ bool initialUpdate = true;
 bool pointLightSetOn = true;
 bool headLightSetOn = true;
 bool debugSetOn = false;
+bool ambientOn = true;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 12;  // number of models in this scene
 const int nTextures = 6; // number of textures
@@ -71,6 +72,7 @@ GLuint HEADON;
 GLuint HEADLOCATION;
 GLuint HEADINTENSITY;
 GLuint DEBUGON;
+GLuint AMBIENTON;
 
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
@@ -617,6 +619,14 @@ void keyboard(unsigned char key, int x, int y) {
 				debugSetOn = true;
 			}
 			break;
+		case 'a': // toggle ambient
+			if (ambientOn){
+				ambientOn = false;
+			}
+			else{
+				ambientOn = true;
+			}
+			break;
 	}
 }
 
@@ -665,13 +675,16 @@ void display() {
 			modelViewMatrix = viewMatrix * modelMatrix;
 			normalMatrix = glm::mat3(modelViewMatrix);
 			ModelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
+
+
 			glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
 			glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-			glUniformMatrix4fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-			glUniform3fv(POINTLOCATION, 1, glm::value_ptr(getPosition(orientation[ruber])));
-			glUniform3fv(POINTINTENSITY, 1, glm::value_ptr(glm::vec3(1, 1, 1)));
+			glUniformMatrix3fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+			glUniform3fv(POINTLOCATION, 1, glm::value_ptr(glm::vec3(0,0,0) * normalMatrix));
+			glUniform3fv(POINTINTENSITY, 1, glm::value_ptr(glm::vec3(.2, .2, .2)));
 			glUniform3fv(HEADLOCATION, 1, glm::value_ptr(getPosition(viewMatrix)));
 			glUniform3fv(HEADINTENSITY, 1, glm::value_ptr(glm::vec3(.5, .5, .5)));
+			glUniform1f(AMBIENTON, ambientOn);
 			glUniform1f(HEADON, headLightSetOn);
 			glUniform1f(POINTON, pointLightSetOn);
 			glUniform1f(DEBUGON, debugSetOn);
@@ -808,6 +821,7 @@ void init() {
   HEADINTENSITY = glGetUniformLocation(shaderProgram, "HeadLightIntensity");
   POINTON = glGetUniformLocation(shaderProgram, "PointLightOn");
   HEADON = glGetUniformLocation(shaderProgram, "HeadLightOn");
+  AMBIENTON = glGetUniformLocation(shaderProgram, "AmbientOn");
   DEBUGON = glGetUniformLocation(shaderProgram, "DebugOn");
 
 
