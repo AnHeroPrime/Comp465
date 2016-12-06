@@ -46,7 +46,7 @@ bool ambientOn = true;
 // constants for models:  file names, vertex count, model display size
 const int nModels = 12;  // number of models in this scene
 const int nTextures = 6; // number of textures
-char * textureFiles[nTextures] = { "left.raw", "right.raw", "top.raw", "bottom.raw", "front.raw", "back.raw" };
+char * textureFile = { "skybox.raw" };
 char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri","" };
 float modelBR[nModels];       // model's bounding radius
 float scaleValue[nModels];    // model's scaling "size" value
@@ -55,7 +55,7 @@ const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 99
 char * vertexShaderFile   = "phase3Vertex.glsl";     
 char * fragmentShaderFile = "phase3Fragment.glsl"; 
 GLuint shaderProgram;
-GLuint textures[nTextures];
+GLuint textures;
 GLuint VAO[nModels];      // Vertex Array Objects
 GLuint buffer[nModels];   // Vertex Buffer Objects
 GLuint ibo, vTexCoord; //indexBufferObject
@@ -77,11 +77,13 @@ GLuint AMBIENTON;
 
 GLuint vPosition[nModels], vColor[nModels], vNormal[nModels];   // vPosition, vColor, vNormal handles for models
 // model, view, projection matrices and values to create modelMatrix.
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 70000.0f};   // size of model
-float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f, 0.0f};
+float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 50000.0f};   // size of model
+float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f, 0.0f };
+float textureRadians = 1.57079632679489661923f;
 glm::vec3 scale[nModels];       // set in init()
 glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0) };
 glm::mat4 rotation[nModels];
+glm::mat4 texRotation; // used for rotating texture
 glm::mat4 orientation[nModels];
 
 static const GLfloat skyboxPoints[] = {
@@ -89,72 +91,13 @@ static const GLfloat skyboxPoints[] = {
 	-1.0f, -1.0f, -1.0f, 1.0f, // 1 bottom left forward corner
 	-1.0f,  1.0f,  1.0f, 1.0f, // 2 top left back corner
 	-1.0f,  1.0f, -1.0f, 1.0f, // 3 top left forward corner
-	 //1.0f, -1.0f,  1.0f, 1.0f, // 4 bottom right back corner
-	 //1.0f, -1.0f, -1.0f, 1.0f, // 5 bottom right forward corner
-	 //1.0f,  1.0f,  1.0f, 1.0f, // 6 top right back corner
-	 //1.0f,  1.0f, -1.0f, 1.0f  // 7 top right forward corner
 };
 
 static const unsigned int indices[] = {
 	0, 1, 2, // 0 left square bottom
 	1, 2, 3, // 1 left square top
-	//4, 5, 6, // 2 right square bottom
-	//5, 6, 7, // 3 right square top
-	//2, 3, 6, // 4 top square back
-	//3, 6, 7, // 5 top square forward
-	//0, 1, 4, // 6 bottom square back
-	//1, 4, 5, // 7 bottom square forward
-	//1, 3, 5, // 8 front square bottom
-	//3, 5, 7, // 9 front square top
-	//0, 2, 4, // 10 back square bottom
-	//2, 4, 6, // 11 back square top
 };
-/* part 1 of texture fix that didn't work
 
-const int X = 0, Y = 1, Z = 2, START = 0, STOP = 1, ruber = 0, unum = 1, duo = 2, primus = 3, secundus = 4, ship = 5, missile_1 = 6, missile_2 = 7, missileBase_1 = 8, missileBase_2 = 9, missile_3 = 10, skyboxStart = 11, skyboxEnd = 16, gravityMax = 90000000;
-const int nModels = 17;  // number of models in this scene
-char * textureFiles[nTextures] = { "left.raw", "right.raw", "top.raw", "bottom.raw", "front.raw", "back.raw" };
-char * modelFile[nModels] = { "Ruber.tri", "Unum.tri", "Duo.tri", "Primus.tri", "Secundus.tri", "Warbird.tri", "Missile.tri", "Missile.tri", "Missilebase.tri", "Missilebase.tri", "Missile.tri","","","","","","" };
-const int nVertices[nModels] = { 264 * 3, 264 * 3, 264 * 3, 264 * 3, 264 * 3, 996 * 3, 252 * 3, 252 * 3, 12 * 3, 12 * 3, 252 * 3, 2 * 3, 2 * 3, 2 * 3 , 2 * 3 , 2 * 3 , 2 * 3};
-GLuint ibo[nTextures];  //indexBufferObject
-float modelSize[nModels] = { 2000.0f, 200.0f, 400.0f, 100.0f, 150.0f, 100.0f, 45.0f, 45.0f, 30.0f, 30.0f, 45.0f, 100000.0f, 100000.0f , 100000.0f , 100000.0f , 100000.0f , 100000.0f };   // size of model
-float modelRadians[nModels] = { 0.0f, 0.004f, 0.002f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f, 0.004f, 0.002f, 0.0f, 0.0f, 0.0f , 0.0f , 0.0f , 0.0f , 0.0f };
-glm::vec3 translate[nModels] = { glm::vec3(0, 0, 0), glm::vec3(4000, 0, 0), glm::vec3(9000, 0, 0), glm::vec3(-900, 0, 0), glm::vec3(-1750, 0, 0), glm::vec3(5000, 1000, 5000), glm::vec3(4900, 1000, 4850), glm::vec3(4900, 1050, 4850), glm::vec3(4000, 225, 0), glm::vec3(-1750, 175, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0) };
-GLuint vPosition[nModels], vColor[nModels], vNormal[nModels], vTexCoord[nTextures]; // vPosition, vColor, vNormal,vTexCoord handles for models
-
-static const unsigned int left[] = {
-	0, 1, 2, // 0 left square bottom
-	1, 2, 3, // 1 left square top
-};
-static const unsigned int right[] = {
-	4, 5, 6, // 2 right square bottom
-	5, 6, 7, // 3 right square top
-};
-static const unsigned int top[] = {
-	2, 3, 6, // 4 top square back
-	3, 6, 7, // 5 top square forward
-};
-static const unsigned int bottom[] = {
-	0, 1, 4, // 6 bottom square back
-	1, 4, 5, // 7 bottom square forward
-};
-static const unsigned int front[] = {
-	1, 3, 5, // 8 front square bottom
-	3, 5, 7, // 9 front square top
-};
-static const unsigned int back[] = {
-	0, 2, 4, // 10 back square bottom
-	2, 4, 6, // 11 back square top
-};
-static const unsigned int * indices[] = {
-	left,
-	right,
-	top,
-	bottom,
-	front,
-	back
-};
-*/
 
 static const GLfloat texCoords[] = {
 	0.0f, 0.0f,     // 0 bottom left
@@ -670,7 +613,7 @@ void display() {
   // update model matrix
   glClearColor(0,0,0,0);
 	for (int m = 0; m < nModels; m++) {
-		
+		if (m != skybox) {
 			modelMatrix = orientation[m];
 			modelViewMatrix = viewMatrix * modelMatrix;
 			normalMatrix = glm::mat3(modelViewMatrix);
@@ -689,17 +632,50 @@ void display() {
 			glUniform1f(POINTON, pointLightSetOn);
 			glUniform1f(DEBUGON, debugSetOn);
 			glBindVertexArray(VAO[m]);
-			/* part 2 of texture fix that didn't work
-			if ((m >= skyboxStart) && (m <= skyboxEnd))
-			*/
-		if (m != skybox) {
 			glUniform1f(TEX, false);
 			glDrawArrays(GL_TRIANGLES, 0, nVertices[m]);
 		}
 		else {
-			glUniform1f(TEX, true);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-			glDrawElements(GL_TRIANGLES, nVertices[m], GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+			for (int n = 0; n < nTextures; n++) { //rotate texture in to cube position
+				if (n < 4) {
+					texRotation = rotation[m];
+					texRotation = glm::rotate(texRotation, textureRadians * n, glm::vec3(0, 1, 0));
+					orientation[m] = texRotation * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+				}
+				else if (n == 4){
+					texRotation = rotation[m];
+					texRotation = glm::rotate(texRotation, textureRadians, glm::vec3(0, 0, 1));
+					orientation[m] = texRotation * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+				}
+				else{ //n = 5
+					texRotation = rotation[m];
+					texRotation = glm::rotate(texRotation, textureRadians * -1, glm::vec3(0, 0, 1));
+					orientation[m] = texRotation * glm::translate(identity, translate[m]) * glm::scale(identity, glm::vec3(scale[m]));
+				}
+				
+
+				modelMatrix = orientation[m];
+				modelViewMatrix = viewMatrix * modelMatrix;
+				normalMatrix = glm::mat3(modelViewMatrix);
+				ModelViewProjectionMatrix = projectionMatrix * modelViewMatrix;
+
+
+				glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(ModelViewProjectionMatrix));
+				glUniformMatrix4fv(MV, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+				glUniformMatrix3fv(NM, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+				glUniform3fv(POINTLOCATION, 1, glm::value_ptr(glm::vec3(0, 0, 0) * normalMatrix));
+				glUniform3fv(POINTINTENSITY, 1, glm::value_ptr(glm::vec3(.2, .2, .2)));
+				glUniform3fv(HEADLOCATION, 1, glm::value_ptr(getPosition(viewMatrix)));
+				glUniform3fv(HEADINTENSITY, 1, glm::value_ptr(glm::vec3(.5, .5, .5)));
+				glUniform1f(AMBIENTON, ambientOn);
+				glUniform1f(HEADON, headLightSetOn);
+				glUniform1f(POINTON, pointLightSetOn);
+				glUniform1f(DEBUGON, debugSetOn);
+				glBindVertexArray(VAO[m]);
+				glUniform1f(TEX, true);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+				glDrawElements(GL_TRIANGLES, nVertices[m], GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+			}
 		}
 	}
   glutSwapBuffers();
@@ -721,13 +697,8 @@ void init() {
 	shaderProgram = loadShaders(vertexShaderFile, fragmentShaderFile);
 	glUseProgram(shaderProgram);
 
-	//load in textures
-	/*
-	for (int i = 0; i < nTextures; i++) { //read in skybox textures
-		textures[i] = loadRawTexture(textures[i], textureFiles[i], 1024, 1024);		
-	}
-	*/
-	GLuint texture = loadRawTexture(textures[2], textureFiles[2], 1024, 1024);
+	//load in texture
+	GLuint texture = loadRawTexture(textures, textureFile, 1080, 1080);
 	
   // generate VAOs and VBOs
   glGenVertexArrays( nModels, VAO );
@@ -757,43 +728,9 @@ void init() {
   glVertexAttribPointer(vTexCoord, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(skyboxPoints)));
   glEnableVertexAttribArray(vTexCoord);
 
-
-  /* part 3 of texture fix that didn't work
-  for (int i = 0; i < nTextures; i++) { //read in skybox textures
-		textures[i] = loadRawTexture(textures[i], textureFiles[i], 1024, 1024);
-		arrayIndex = i + 11;
-
-		glGenBuffers(1, &ibo[i]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo[i]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[i]), indices[i], GL_STATIC_DRAW);
-
-		// set up the indexed skybox vertex attributes
-		glBindVertexArray(VAO[arrayIndex]);
-
-		// initialize a buffer object
-		glEnableVertexAttribArray(buffer[arrayIndex]);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer[arrayIndex]);
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxPoints) + sizeof(texCoords), NULL, GL_STATIC_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(skyboxPoints), skyboxPoints);
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(skyboxPoints), sizeof(texCoords), texCoords);
-
-
-		// set up vertex arrays (after shaders are loaded)
-		vPosition[arrayIndex] = glGetAttribLocation(shaderProgram, "vPosition");
-		glVertexAttribPointer(vPosition[arrayIndex], 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-		glEnableVertexAttribArray(vPosition[arrayIndex]);
-
-		vTexCoord[i] = glGetAttribLocation(shaderProgram, "vTexCoord");
-		glVertexAttribPointer(vTexCoord[i], 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(skyboxPoints)));
-		glEnableVertexAttribArray(vTexCoord[i]);*/
-
   // load the buffers from the model files
 
   for (int i = 0; i < nModels; i++) {
-	  /* part 4 of texture fix that didn't work
-	  if ((i >= skyboxStart) && (i <= skyboxEnd)) {
-	  */
 	  if (i != skybox) {
 		  modelBR[i] = loadModelBuffer(modelFile[i], nVertices[i], VAO[i], buffer[i], shaderProgram,
 			  vPosition[i], vColor[i], vNormal[i], "vPosition", "vColor", "vNormal");
