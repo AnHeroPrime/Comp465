@@ -1,5 +1,7 @@
 Warbird Simulation Phase 2 README
 
+By Steven Blachowiak, Arron Scott
+
 Missile Sites:
 - Properly rendered and positioned.
 

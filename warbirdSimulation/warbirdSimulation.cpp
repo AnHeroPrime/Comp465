@@ -8,7 +8,13 @@ using arrays.
 
 Keys: 
 'v' moves to the next camera 'x' moves to the previous camera
-'w' warps the ship to duo
+'w' warps the ship
+'s' changes ship speed
+'f' fires missle
+arrow keys move
+ctrl movement modifier
+'t' change TQ
+light toggles: 'p' point, 'h' headlight, 'd' debug color
 
 Steven Blachowiak, Aaron Scott
 9/29/2016
@@ -807,5 +813,3 @@ int main(int argc, char* argv[]) {
   printf("done\n");
   return 0;
   }
-  
-
